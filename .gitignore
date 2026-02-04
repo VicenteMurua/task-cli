@@ -1,5 +1,6 @@
-.venv/
-0_Diagramas/
-.idea/
+.venv
+0_Diagramas
+.idea
+data
 
-estructura.txt
+0_Diagramas/estructura.txt
