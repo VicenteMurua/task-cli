@@ -36,11 +36,11 @@ class Task:
 
     def cambiar_descripcion(self, nueva_descripcion: str) -> None:
         self._description = nueva_descripcion
-        self._actualizar()
+        self.__actualizar()
 
     def cambiar_estado(self, estado: TaskStatus) -> None:
         self._status = estado
-        self._actualizar()
+        self.__actualizar()
 
     def to_dict(self) -> dict:
         return {
