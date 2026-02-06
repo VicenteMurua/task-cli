@@ -1,5 +1,18 @@
+# Entornos virtuales
 .venv
-0_Diagramas
+
+# IDEs / Editores
 .idea
+
+# Archivos y carpetas de datos / diagramas
+0_Diagramas
 data
 
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de texto generados
+arbol.txt
+instalado.txt

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "task-cli"
+version = "0.1.0"
+description = "Una app de comandos para manejar tareas"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [
+    {name = "Vicente", email = "muruamedina@gmail.com"}
+]
+dependencies = [
+
+]
+[dependency-groups]
+dev =[
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]
+[project.scripts]
+# Esto permite que al escribir 'task-cli' en la terminal se ejecute tu app
+# Asume que en main.py tienes una función llamada def main():
+task-cli = "task_cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+# Hatch encontrará la carpeta task_cli automáticamente en la raíz
+packages = ["src/task_cli"]
