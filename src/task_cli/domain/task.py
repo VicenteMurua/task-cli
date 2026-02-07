@@ -33,11 +33,18 @@ class Task:
         self._description = description
         self._status = status
         self._id = new_id() if _id is None\
-            else _id
+            else _id #TODO
         self._created_at = datetime.now(timezone.utc) if created_at is None\
             else created_at
         self._updated_at = self._created_at if updated_at is None\
             else updated_at
+    @property
+    def identificador(self) -> int:
+        return self._id
+
+    @property
+    def status(self):
+        return self._status
 
     def __actualizar(self):
         self._updated_at = datetime.now(timezone.utc)
