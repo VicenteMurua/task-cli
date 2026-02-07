@@ -6,7 +6,7 @@ class ITaskRepository(ABC):
     def save(self, lista_tareas: list[Task]) -> None:
         pass
     @abstractmethod
-    def load(self, direccion_archivo: str) -> list[Task]:
+    def load(self, direccion_archivo: str) -> dict[int,Task]:
         pass
 
 class JSONTaskRepository(ITaskRepository):
