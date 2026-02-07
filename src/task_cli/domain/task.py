@@ -1,10 +1,18 @@
 from datetime import datetime, timezone
+from functools import wraps
 from enum import Enum
 
 class TaskStatus(Enum):
     TODO = "todo"
     IN_PROGRESS = "in-progress"
     DONE = "done"
+def actualizar(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        resultado = func(self, *args, **kwargs)
+        self.__actualizar()  # llama al method privado de la clase
+        return resultado
+    return wrapper
 
 class Task:
     _id: int
@@ -34,13 +42,13 @@ class Task:
     def __actualizar(self):
         self._updated_at = datetime.now(timezone.utc)
 
+    @actualizar
     def cambiar_descripcion(self, nueva_descripcion: str) -> None:
         self._description = nueva_descripcion
-        self.__actualizar()
 
+    @actualizar
     def cambiar_estado(self, estado: TaskStatus) -> None:
         self._status = estado
-        self.__actualizar()
 
     def to_dict(self) -> dict:
         return {
