@@ -99,5 +99,5 @@ class TaskCli:
             raise ValueError(
                 f"Se esperaba 0 o 1 argumentos para el subcomando list"
                 f" ninguno para listar todos, o para filtrar uno de los siguientes: done, todo, in-progress")
-        for identificador, tarea in self._manager.list(descripcion[0]).items():
-            print(f"{identificador}: {tarea}")
+        for tarea in self._manager.list(descripcion[0]).values():
+            print(tarea)
