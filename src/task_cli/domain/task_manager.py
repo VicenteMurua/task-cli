@@ -37,7 +37,7 @@ class TaskManager:
         tarea_objetivo.cambiar_estado(TaskStatus(estado))
         self._dict_tareas.update({identificador: tarea_objetivo})
 
-    def list(self, filtro: str) -> dict[int, Task]:
+    def filtrar(self, filtro: str) -> dict[int, Task]:
         tareas_filtradas: dict[int, Task] = {}
         if filtro == "":
             return self._dict_tareas
