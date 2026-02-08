@@ -15,9 +15,9 @@ def actualizar(func):
     return wrapper
 
 class Task:
-    _id: int
     _description: str
     _status: TaskStatus
+    _id: int
     _created_at: datetime
     _updated_at: datetime
 
@@ -63,9 +63,9 @@ class Task:
 
     def to_dict(self) -> dict:
         return {
-            "id": self._id,
             "description": self._description,
             "status": self._status.value,
+            "id": self._id,
             "created_at": self._created_at.isoformat(),
             "updated_at": self._updated_at.isoformat(),
         }
