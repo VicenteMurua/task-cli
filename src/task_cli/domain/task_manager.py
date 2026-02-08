@@ -1,7 +1,15 @@
 from task_cli.domain.task import Task, TaskStatus
 from task_cli.repository.task_repository import ITaskRepository
+from functools import wraps
 from datetime import datetime
 
+def guardar(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        resultado = func(self, *args, **kwargs)
+        self._save()  # llama al method privado de la clase
+        return resultado
+    return wrapper
 
 class TaskManager:
     def __init__(self, repository: ITaskRepository) -> None:
@@ -17,6 +25,7 @@ class TaskManager:
     def _save(self):
         self._repository.save(list(self._dict_tareas.values()))
 
+    @guardar
     def add(self, descripcion: str) -> None:
         self._mayor_id += 1
         nueva_tarea: Task = Task(descripcion, TaskStatus.TODO, self._mayor_id)
@@ -26,15 +35,15 @@ class TaskManager:
         descripcion, estado, identificador, creado, actualizado = datos
         nueva_tarea: Task = Task(descripcion, TaskStatus(estado), identificador, creado, actualizado)
         self._dict_tareas[nueva_tarea.identificador] = nueva_tarea
-
+    @guardar
     def update(self, identificador: int, descripcion_nueva: str) -> None:
         tarea_objetivo: Task = self._dict_tareas[identificador]
         tarea_objetivo.cambiar_descripcion(descripcion_nueva)
         self._dict_tareas.update({identificador: tarea_objetivo})
-
+    @guardar
     def delete(self, identificador: int) -> None:
         del self._dict_tareas[identificador]
-
+    @guardar
     def mark(self, estado: str, identificador: int) -> None:
         tarea_objetivo: Task = self._dict_tareas[identificador]
         tarea_objetivo.cambiar_estado(TaskStatus(estado))
