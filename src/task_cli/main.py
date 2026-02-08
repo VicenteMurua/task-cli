@@ -1,21 +1,22 @@
 import sys
+from platformdirs import  user_data_dir
+from pathlib import Path
 
-
+from task_cli.domain.task import Task
+from task_cli.domain.task_manager import TaskManager
+from task_cli.repository.task_repository import JSONTaskRepository, ITaskRepository
+from task_cli.ui.ui_cli import TaskCli
 def main():
-    # sys.argv[0] es siempre el nombre del archivo/comando
-    # sys.argv[1:] son los argumentos que tú escribes
-    args = sys.argv[1:]
 
-    if len(args) == 0:
-        print("Hola, estás usando el CLI de tareas (0 argumentos)")
-
-    elif len(args) == 1:
-        print(f"Se recibio el argumento: {args[0]}")
-
-    else:
-        print("Se recibieron varios argumentos, pero solo esperaba uno.")
-        print(f"Los argumentos fueron: {args}")
-
+    APP_NAME = "task_cli"
+    data_dir = user_data_dir(APP_NAME)
+    path_dir = Path(data_dir)
+    path_dir.mkdir(parents=True, exist_ok=True)
+    json_path = path_dir / "task.json"
+    repo: ITaskRepository = JSONTaskRepository(json_path)
+    task_manager = TaskManager(repo)
+    cli_handler = TaskCli(task_manager)
+    cli_handler.run(sys.argv)
 
 if __name__ == "__main__":
     main()
