@@ -9,9 +9,11 @@ class TaskManager:
         self._dict_tareas: dict[int, Task] = {}
         self._load()
         self._mayor_id: int = max(self._dict_tareas.keys(), default=0)
+
     def _load(self):
         for dato in self._repository.load(""):
             self.recomponer(dato)
+
     def add(self, descripcion: str) -> None:
         self._mayor_id += 1
         nueva_tarea: Task = Task(descripcion, TaskStatus.TODO, self._mayor_id)
