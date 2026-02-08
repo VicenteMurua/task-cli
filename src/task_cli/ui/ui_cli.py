@@ -102,7 +102,7 @@ class TaskCli:
                 f" ninguno para listar todos, o para filtrar uno de los siguientes: done, todo, in-progress")
         lista_de_tareas: list[Task] = list(self._manager.filtrar(descripcion[0]).values())
         if not lista_de_tareas:
-            print("No hay tareas agendadas")
+            print("No hay tareas agendadas, en este filtro. Agregue una nueva con 'add'.")
             return
         for tarea in lista_de_tareas:
             print(tarea)
