@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
+import locale
+locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+from colorama import Fore, Style, init
+init(autoreset=True)
 
 class TaskStatus(Enum):
     TODO = "todo"
@@ -10,7 +14,7 @@ def actualizar(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         resultado = func(self, *args, **kwargs)
-        self.__actualizar()  # llama al method privado de la clase
+        self._actualizar()  # llama al method privado de la clase
         return resultado
     return wrapper
 
@@ -46,11 +50,15 @@ class Task:
         return self._status
 
     def __str__(self):
-        return f"id: {self._id}, status: {self.status}\n"\
-               f"tarea: {self._description} \n"\
-               f"created_at: {self._created_at}, updated_at: {self._updated_at}"
+        return (
+            f"\n{'-' * 100}\n"
+            f"Creación: {self._created_at.strftime('%d de %B del %Y')}"
+            f" - {Fore.GREEN}Tarea #{self._id} [{self.status.value}] {Style.RESET_ALL}"
+            f" - Última actualización: {self._updated_at.strftime('%d de %B del %Y')}"
+            f"\n {self._description}"
+        )
 
-    def __actualizar(self):
+    def _actualizar(self):
         self._updated_at = datetime.now(timezone.utc)
 
     @actualizar
