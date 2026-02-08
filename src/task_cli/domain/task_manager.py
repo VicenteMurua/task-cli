@@ -14,6 +14,9 @@ class TaskManager:
         for dato in self._repository.load():
             self.recomponer(dato)
 
+    def _save(self):
+        self._repository.save(list(self._dict_tareas.values()))
+
     def add(self, descripcion: str) -> None:
         self._mayor_id += 1
         nueva_tarea: Task = Task(descripcion, TaskStatus.TODO, self._mayor_id)
