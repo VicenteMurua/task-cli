@@ -11,7 +11,7 @@ class TaskManager:
         self._mayor_id: int = max(self._dict_tareas.keys(), default=0)
 
     def _load(self):
-        for dato in self._repository.load(""):
+        for dato in self._repository.load():
             self.recomponer(dato)
 
     def add(self, descripcion: str) -> None:
