@@ -45,6 +45,11 @@ class Task:
     def status(self):
         return self._status
 
+    def __str__(self):
+        return f"id: {self._id}, status: {self.status}\n"\
+               f"tarea: {self._description} \n"\
+               f"created_at: {self._created_at}, updated_at: {self._updated_at}"
+
     def __actualizar(self):
         self._updated_at = datetime.now(timezone.utc)
 
