@@ -13,7 +13,7 @@ authors = [
     {name = "Vicente", email = "muruamedina@gmail.com"}
 ]
 dependencies = [
-
+    "platformdirs>=4.5.1",
 ]
 [dependency-groups]
 dev =[
