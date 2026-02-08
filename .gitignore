@@ -6,6 +6,7 @@
 
 # Archivos y carpetas de datos / diagramas
 0_Diagramas
+_Diagramas
 data
 
 # Archivos de Python compilados
@@ -16,3 +17,4 @@ __pycache__/
 # Archivos de texto generados
 arbol.txt
 instalado.txt
+contexto.md
