@@ -24,7 +24,7 @@ class Task:
     def __init__(self,
                  description: str,
                  status: TaskStatus,
-                 _id: int | None = None,
+                 _id: int,
                  created_at: datetime | None = None,
                  updated_at: datetime | None = None,
                  ):
@@ -32,8 +32,7 @@ class Task:
             raise ValueError("CreatedAt and updatedAt must both be None or defined")
         self._description = description
         self._status = status
-        self._id = new_id() if _id is None\
-            else _id #TODO
+        self._id = _id
         self._created_at = datetime.now(timezone.utc) if created_at is None\
             else created_at
         self._updated_at = self._created_at if updated_at is None\
