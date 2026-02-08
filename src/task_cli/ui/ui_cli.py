@@ -1,4 +1,5 @@
 from task_cli.domain.task_manager import TaskManager
+from task_cli.domain.task import Task
 from collections.abc import Callable
 class TaskCli:
     _manager: TaskManager
@@ -99,5 +100,9 @@ class TaskCli:
             raise ValueError(
                 f"Se esperaba 0 o 1 argumentos para el subcomando list"
                 f" ninguno para listar todos, o para filtrar uno de los siguientes: done, todo, in-progress")
-        for tarea in self._manager.list(descripcion[0]).values():
+        lista_de_tareas: list[Task] = list(self._manager.filtrar(descripcion[0]).values())
+        if not lista_de_tareas:
+            print("No hay tareas agendadas")
+            return
+        for tarea in lista_de_tareas:
             print(tarea)
