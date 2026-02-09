@@ -13,6 +13,30 @@ class TaskCli:
         self._parser = argparse.ArgumentParser(prog="task-cli")
         self._init_config()
 
+    def run(self) -> None:
+        args = self._parser.parse_args(sys.argv[1:])
+        args.func(args)
+
+    def _cmd_add(self, args: argparse.Namespace) -> None:
+        self._manager.add(args.descripcion)
+
+    def _cmd_update(self, args: argparse.Namespace) -> None:
+        self._manager.update(args.id, args.descripcion)
+
+    def _cmd_delete(self, args: argparse.Namespace) -> None:
+        self._manager.delete(args.id)
+
+    def _cmd_mark(self, args: argparse.Namespace) -> None:
+        self._manager.mark(args.status, args.id)
+
+    def _cmd_list(self, args: argparse.Namespace) -> None:
+        lista_de_tareas: list[Task] = list(self._manager.filtrar(args.filtro).values())
+        if not lista_de_tareas:
+            print("No hay tareas agendadas, en este filtro. Agregue una nueva con 'add'.")
+            return
+        for tarea in lista_de_tareas:
+            print(tarea)
+
     def _init_config(self):
         subparsers: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)
         self._conf_add(subparsers)
@@ -95,27 +119,3 @@ class TaskCli:
             help="Filtro de tareas por estado"
         )
         parser_list.set_defaults(func=self._cmd_list)
-
-    def run(self) -> None:
-        args = self._parser.parse_args(sys.argv[1:])
-        args.func(args)
-
-    def _cmd_add(self, args: argparse.Namespace) -> None:
-        self._manager.add(args.descripcion)
-
-    def _cmd_update(self, args: argparse.Namespace) -> None:
-        self._manager.update(args.id, args.descripcion)
-
-    def _cmd_delete(self, args: argparse.Namespace) -> None:
-        self._manager.delete(args.id)
-
-    def _cmd_mark(self, args: argparse.Namespace) -> None:
-        self._manager.mark(args.status, args.id)
-
-    def _cmd_list(self, args: argparse.Namespace) -> None:
-        lista_de_tareas: list[Task] = list(self._manager.filtrar(args.filtro).values())
-        if not lista_de_tareas:
-            print("No hay tareas agendadas, en este filtro. Agregue una nueva con 'add'.")
-            return
-        for tarea in lista_de_tareas:
-            print(tarea)
