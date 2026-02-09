@@ -12,15 +12,23 @@ class TaskCli:
         self._manager = manager
         self._parser = argparse.ArgumentParser(prog="task-cli")
         subparsers = self._parser.add_subparsers(dest="command")
-        parser_add = subparsers.add_parser("add")
+        # ------------------------ add ------------------------ #
+        parser_add = subparsers.add_parser("add", help="Agrega una nueva tarea")
         parser_add.set_defaults(func =self._cmd_add)
-        parser_update = subparsers.add_parser("update")
+        # ------------------------ update ------------------------ #
+        parser_update = subparsers.add_parser("update", help="Cambia descripción de tarea")
         parser_update.set_defaults(func =self._cmd_update)
-        parser_delete = subparsers.add_parser("delete")
+        # ------------------------ delete ------------------------ #
+        parser_delete = subparsers.add_parser("delete", help="Elimina una tarea")
         parser_delete.set_defaults(func =self._cmd_delete)
-        parser_mark = subparsers.add_parser("mark")
+        # ------------------------ mark-done ------------------------ #
+        parser_mark = subparsers.add_parser("mark-done", help="Marca 'done' una tarea")
         parser_mark.set_defaults(func =self._cmd_mark)
-        parser_list = subparsers.add_parser("list")
+        # ------------------------ mark-in-progress ------------------------ #
+        parser_mark = subparsers.add_parser("mark-in-progress", help="Marca 'in-progress' una tarea")
+        parser_mark.set_defaults(func=self._cmd_mark)
+        # ------------------------ list ------------------------ #
+        parser_list = subparsers.add_parser("list", help="Lista todas las tareas")
         parser_list.set_defaults(func =self._cmd_list)
 
     def run(self) -> None:
