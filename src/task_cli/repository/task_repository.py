@@ -11,7 +11,7 @@ class ITaskRepository(ABC):
         pass
 
     @abstractmethod
-    def save(self, lista_tareas: list[Task]) -> None:
+    def save(self, task_list: list[Task]) -> None:
         pass
 
 class JSONTaskRepository(ITaskRepository):
@@ -22,23 +22,23 @@ class JSONTaskRepository(ITaskRepository):
 
         if not self.path.exists():
             self.path.write_text("[]", encoding="utf-8")
-        lista_datos_tareas: list[tuple[str, TaskStatus, int, datetime, datetime]] = []
-        with open(self.path, 'r', encoding='utf-8') as archivo:
-            datos_crudos = json.load(archivo)
-            for datos in datos_crudos:
-                descripcion: str = datos['description']
-                estado: TaskStatus = TaskStatus(datos['status'])
-                identificador: int = int(datos['id'])
-                creacion: datetime = datetime.fromisoformat(datos['created_at'])
-                actualizacion: datetime = datetime.fromisoformat(datos['updated_at'])
-                argumento = descripcion, estado, identificador, creacion, actualizacion
-                lista_datos_tareas.append(argumento)
-        return  lista_datos_tareas
+        task_data_list: list[tuple[str, TaskStatus, int, datetime, datetime]] = []
+        with open(self.path, 'r', encoding='utf-8') as file:
+            raw_data = json.load(file)
+            for task_entry in raw_data:
+                description: str = task_entry['description']
+                status: TaskStatus = TaskStatus(task_entry['status'])
+                task_id: int = int(task_entry['id'])
+                created_at: datetime = datetime.fromisoformat(task_entry['created_at'])
+                updated_at: datetime = datetime.fromisoformat(task_entry['updated_at'])
+                task_tuple = description, status, task_id, created_at, updated_at
+                task_data_list.append(task_tuple)
+        return  task_data_list
 
-    def save(self, lista_tareas: list[Task]) -> None:
-        lista_datos = []
-        for tarea in lista_tareas:
-            lista_datos.append(tarea.to_dict())
+    def save(self, task_list: list[Task]) -> None:
+        serialized_task = []
+        for task in task_list:
+            serialized_task.append(task.to_dict())
 
-        with open(self.path, 'w', encoding='utf-8') as archivo:
-            json.dump(lista_datos, archivo, ensure_ascii=False, indent=4)
+        with open(self.path, 'w', encoding='utf-8') as file:
+            json.dump(serialized_task, file, ensure_ascii=False, indent=4)

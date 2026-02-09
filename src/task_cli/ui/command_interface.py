@@ -29,7 +29,7 @@ class CommandInterface:
         self._manager.mark(args.status, args.task_id)
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
-        task_list: list[Task] = list(self._manager.filtrar(args.filter).values())
+        task_list: list[Task] = list(self._manager.filter_tasks(args.filter).values())
         if not task_list:
             print(
                 "No tasks are scheduled under this filter. "
