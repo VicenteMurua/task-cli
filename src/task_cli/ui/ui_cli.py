@@ -12,16 +12,21 @@ class TaskCli:
         self._manager = manager
         self._parser = argparse.ArgumentParser(prog="task-cli")
         subparsers = self._parser.add_subparsers(dest="command")
+
         # ------------------------ add ------------------------ #
         parser_add = subparsers.add_parser("add", help="Agrega una nueva tarea")
         parser_add.add_argument("descripción", help="Descripción de la tarea")
         parser_add.set_defaults(func =self._cmd_add)
+
         # ------------------------ update ------------------------ #
         parser_update = subparsers.add_parser("update", help="Cambia descripción de tarea")
         parser_update.set_defaults(func =self._cmd_update)
+
         # ------------------------ delete ------------------------ #
         parser_delete = subparsers.add_parser("delete", help="Elimina una tarea")
+        parser_delete.add_argument("id", type=int, help="id de la tarea")
         parser_delete.set_defaults(func =self._cmd_delete)
+
         # ------------------------ mark-done ------------------------ #
         parser_mark = subparsers.add_parser("mark-done", help="Marca 'done' una tarea")
         parser_mark.set_defaults(func =self._cmd_mark)
@@ -52,22 +57,8 @@ class TaskCli:
             raise ValueError("El valor asignado al identificador no es un int")
         self._manager.update(_id, descripcion)
 
-    def _cmd_delete(self, descripcion: list[str]) -> None:
-        elementos = len(descripcion)
-        if elementos != 1:
-            raise ValueError(
-                f"Se proporcionaron {elementos} argumentos, se esperaba 1 solo argumentos para el subcomando delete"
-                f" el id de la tarea a eliminar")
-        if descripcion[0] == "":
-            raise ValueError(
-                f"Se proporcionaron 0 argumentos, se esperaba 1 argumento para el subcomando delete"
-                f" el id de la tarea a eliminar")
-        identificador: str = descripcion[0]
-        try:
-            _id: int = int(identificador)
-        except ValueError:
-            raise ValueError("El valor asignado al identificador no es un int")
-        self._manager.delete(_id)
+    def _cmd_delete(self, args: argparse.Namespace) -> None:
+        self._manager.delete(args.id)
 
     def _cmd_mark(self, descripcion: list[str]) -> None:
         elementos = len(descripcion)
