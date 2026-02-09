@@ -13,6 +13,7 @@ def main():
     path_dir.mkdir(parents=True, exist_ok=True)
     json_path = path_dir / "task.json"
     repo: ITaskRepository = JSONTaskRepository(json_path)
+
     task_manager = TaskManager(repo)
     cli_handler = TaskCli(task_manager)
     cli_handler.run()
