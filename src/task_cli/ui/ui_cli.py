@@ -1,104 +1,81 @@
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.task import Task
+import sys
 from collections.abc import Callable
+import argparse
+
+
 class TaskCli:
     _manager: TaskManager
 
     def __init__(self, manager: TaskManager):
         self._manager = manager
+        self._parser = argparse.ArgumentParser(prog="task-cli")
+        subparsers = self._parser.add_subparsers(dest="command", required=True)
 
-    def run(self, command: list[str]) -> None:
-        comandos:dict[str, Callable[[list[str]], None]] = {
-            "add": self._cmd_add,
-            "update": self._cmd_update,
-            "delete": self._cmd_delete,
-            "mark": self._cmd_mark,
-            "list": self._cmd_list,
-        }
-        largo_comando_entrada = len(command)
-        if largo_comando_entrada == 1:
-            raise ValueError("Sin argumentos")
+        # ------------------------ add ------------------------ #
+        parser_add = subparsers.add_parser("add",
+            help="Agrega una nueva tarea")
+        parser_add.add_argument("descripcion",
+            help="Descripción de la tarea")
+        parser_add.set_defaults(func =self._cmd_add)
 
-        comando: str = command[1]
-        # TODO: quitar ese fix y habilitar todo el programa para que los typehints acepten null
-        detalle: list[str] = command[2:] if largo_comando_entrada > 2 else [""]
+        # ------------------------ update ------------------------ #
+        parser_update = subparsers.add_parser("update",
+            help="Cambia descripción de tarea")
+        parser_update.add_argument("id", type=int,
+            help="id de la tarea")
+        parser_update.add_argument("descripcion",
+            help="Descripción de la tarea")
+        parser_update.set_defaults(func =self._cmd_update)
 
-        if comando.split("-", 1)[0] not in comandos:
-            raise ValueError("No se ingreso comando válido")
+        # ------------------------ delete ------------------------ #
+        parser_delete = subparsers.add_parser("delete",
+            help="Elimina una tarea")
+        parser_delete.add_argument("id", type=int,
+            help="id de la tarea")
+        parser_delete.set_defaults(func =self._cmd_delete)
 
-        funcion: str = comando
-        argumento: list[str] = detalle
+        # ------------------------ mark-done ------------------------ #
+        parser_mark_done = subparsers.add_parser("mark-done",
+            help="Marca 'done' una tarea")
+        parser_mark_done.add_argument("id", type=int,
+            help="id de la tarea")
+        parser_mark_done.set_defaults(func =self._cmd_mark, status="done")
 
-        if "-" in comando:
-            funcion, estado = comando.split("-", 1)
-            argumento = [estado] + argumento
-        comandos[funcion](argumento)
+        # ------------------------ mark-in-progress ------------------------ #
+        parser_mark_in_progress = subparsers.add_parser("mark-in-progress",
+            help="Marca 'in-progress' una tarea")
+        parser_mark_in_progress.add_argument("id", type=int,
+            help="id de la tarea")
+        parser_mark_in_progress.set_defaults(func=self._cmd_mark, status="in-progress")
 
-    def _cmd_add(self, descripcion: list[str]) -> None:
-        if descripcion[0] == "":
-            raise ValueError("Sin argumentos, se esperaba un argumento para la descripción de la tarea")
-        if len(descripcion) > 1:
-            raise ValueError("Demasiados argumentos, se esperaba un solo argumento para la descripción, pruebe el uso de comillas")
-        nueva_tarea = descripcion[0]
-        self._manager.add(nueva_tarea)
+        # ------------------------ list ------------------------ #
+        parser_list = subparsers.add_parser("list",
+            help="Lista todas las tareas")
+        parser_list.add_argument("filtro",
+            nargs="?", default=None, choices=["done","in-progress","todo"],
+            help="Filtro de tareas por estado")
+        parser_list.set_defaults(func =self._cmd_list)
 
-    def _cmd_update(self, descripcion: list[str]) -> None:
-        largo_descripcion = len(descripcion)
-        if largo_descripcion != 2:
-            raise ValueError(f"Se proporcionaron {largo_descripcion} argumentos, se esperaban solo 2 argumentos para el subcomando update"
-                             f" el id de la tarea y la descripcion nueva")
-        identificador: str = descripcion[0]
-        descripcion: str = descripcion[1]
-        try:
-            _id: int = int(identificador)
-        except ValueError:
-            raise ValueError("El valor asignado al identificador no es un int")
-        self._manager.update(_id, descripcion)
+    def run(self) -> None:
+        args = self._parser.parse_args(sys.argv[1:])
+        args.func(args)
 
-    def _cmd_delete(self, descripcion: list[str]) -> None:
-        elementos = len(descripcion)
-        if elementos != 1:
-            raise ValueError(
-                f"Se proporcionaron {elementos} argumentos, se esperaba 1 solo argumentos para el subcomando delete"
-                f" el id de la tarea a eliminar")
-        if descripcion[0] == "":
-            raise ValueError(
-                f"Se proporcionaron 0 argumentos, se esperaba 1 argumento para el subcomando delete"
-                f" el id de la tarea a eliminar")
-        identificador: str = descripcion[0]
-        try:
-            _id: int = int(identificador)
-        except ValueError:
-            raise ValueError("El valor asignado al identificador no es un int")
-        self._manager.delete(_id)
+    def _cmd_add(self, args: argparse.Namespace) -> None:
+        self._manager.add(args.descripcion)
 
-    def _cmd_mark(self, descripcion: list[str]) -> None:
-        elementos = len(descripcion)
-        accion: str = descripcion[0]
-        if elementos != 2:
-            raise ValueError(
-                f"Se proporcionaron {elementos} argumentos, se esperaba 1 solo argumentos para el subcomando mark-{accion}"
-                f" el id de la tarea a marcar")
-        if descripcion[0] == "":
-            raise ValueError(
-                f"Se proporcionaron 0 argumentos, se esperaba 1 solo argumentos para el subcomando mark-{accion}"
-                f" el id de la tarea a marcar")
+    def _cmd_update(self, args: argparse.Namespace) -> None:
+        self._manager.update(args.id, args.descripcion)
 
-        descripcion: list[str] = descripcion[1:]
-        identificador: str = descripcion[0]
-        try:
-            _id: int = int(identificador)
-        except ValueError:
-            raise ValueError("El valor asignado al identificador no es un int")
-        self._manager.mark(accion, _id)
+    def _cmd_delete(self, args: argparse.Namespace) -> None:
+        self._manager.delete(args.id)
 
-    def _cmd_list(self, descripcion: list[str]):
-        cantidad_argumentos = len(descripcion)
-        if cantidad_argumentos != 1:
-            raise ValueError(
-                f"Se esperaba 0 o 1 argumentos para el subcomando list"
-                f" ninguno para listar todos, o para filtrar uno de los siguientes: done, todo, in-progress")
-        lista_de_tareas: list[Task] = list(self._manager.filtrar(descripcion[0]).values())
+    def _cmd_mark(self, args: argparse.Namespace) -> None:
+        self._manager.mark(args.status, args.id)
+
+    def _cmd_list(self, args: argparse.Namespace) -> None:
+        lista_de_tareas: list[Task] = list(self._manager.filtrar(args.filtro).values())
         if not lista_de_tareas:
             print("No hay tareas agendadas, en este filtro. Agregue una nueva con 'add'.")
             return

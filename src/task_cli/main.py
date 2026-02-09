@@ -15,7 +15,7 @@ def main():
     repo: ITaskRepository = JSONTaskRepository(json_path)
     task_manager = TaskManager(repo)
     cli_handler = TaskCli(task_manager)
-    cli_handler.run(sys.argv)
+    cli_handler.run()
 
 if __name__ == "__main__":
     main()

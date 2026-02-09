@@ -49,9 +49,9 @@ class TaskManager:
         tarea_objetivo.cambiar_estado(TaskStatus(estado))
         self._dict_tareas.update({identificador: tarea_objetivo})
 
-    def filtrar(self, filtro: str) -> dict[int, Task]:
+    def filtrar(self, filtro: str|None) -> dict[int, Task]:
         tareas_filtradas: dict[int, Task] = {}
-        if filtro == "":
+        if filtro is None:
             return self._dict_tareas
         for identificador, tarea in self._dict_tareas.items():
             if tarea.status is TaskStatus(filtro):
