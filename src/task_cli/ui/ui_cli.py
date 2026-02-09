@@ -1,6 +1,9 @@
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.task import Task
 from collections.abc import Callable
+import argparse
+
+
 class TaskCli:
     _manager: TaskManager
 
@@ -8,6 +11,14 @@ class TaskCli:
         self._manager = manager
 
     def run(self, command: list[str]) -> None:
+        parser = argparse.ArgumentParser(prog="task-cli")
+        subparsers = parser.add_subparsers(dest="command")
+        parser_add = subparsers.add_parser("add")
+        parser_update = subparsers.add_parser("update")
+        parser_delete = subparsers.add_parser("delete")
+        parser_mark = subparsers.add_parser("mark")
+        parser_list = subparsers.add_parser("list")
+
         comandos:dict[str, Callable[[list[str]], None]] = {
             "add": self._cmd_add,
             "update": self._cmd_update,
