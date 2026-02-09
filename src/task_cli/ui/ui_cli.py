@@ -1,5 +1,6 @@
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.task import Task
+import sys
 from collections.abc import Callable
 import argparse
 
@@ -22,26 +23,9 @@ class TaskCli:
         parser_list = subparsers.add_parser("list")
         parser_list.set_defaults(func =self._cmd_list)
 
-    def run(self, command: list[str]) -> None:
-
-        largo_comando_entrada = len(command)
-        if largo_comando_entrada == 1:
-            raise ValueError("Sin argumentos")
-
-        comando: str = command[1]
-        # TODO: quitar ese fix y habilitar todo el programa para que los typehints acepten null
-        detalle: list[str] = command[2:] if largo_comando_entrada > 2 else [""]
-
-        if comando.split("-", 1)[0] not in comandos:
-            raise ValueError("No se ingreso comando válido")
-
-        funcion: str = comando
-        argumento: list[str] = detalle
-
-        if "-" in comando:
-            funcion, estado = comando.split("-", 1)
-            argumento = [estado] + argumento
-        comandos[funcion](argumento)
+    def run(self) -> None:
+        args = self._parser.parse_args(sys.argv[1:])
+        args.func(args)
 
     def _cmd_add(self, descripcion: list[str]) -> None:
         if descripcion[0] == "":
