@@ -14,6 +14,7 @@ class TaskCli:
         subparsers = self._parser.add_subparsers(dest="command")
         # ------------------------ add ------------------------ #
         parser_add = subparsers.add_parser("add", help="Agrega una nueva tarea")
+        parser_add.add_argument("descripción", help="Descripción de la tarea")
         parser_add.set_defaults(func =self._cmd_add)
         # ------------------------ update ------------------------ #
         parser_update = subparsers.add_parser("update", help="Cambia descripción de tarea")
@@ -35,13 +36,8 @@ class TaskCli:
         args = self._parser.parse_args(sys.argv[1:])
         args.func(args)
 
-    def _cmd_add(self, descripcion: list[str]) -> None:
-        if descripcion[0] == "":
-            raise ValueError("Sin argumentos, se esperaba un argumento para la descripción de la tarea")
-        if len(descripcion) > 1:
-            raise ValueError("Demasiados argumentos, se esperaba un solo argumento para la descripción, pruebe el uso de comillas")
-        nueva_tarea = descripcion[0]
-        self._manager.add(nueva_tarea)
+    def _cmd_add(self, args: argparse.Namespace) -> None:
+        self._manager.add(args.descripcion)
 
     def _cmd_update(self, descripcion: list[str]) -> None:
         largo_descripcion = len(descripcion)
