@@ -15,11 +15,13 @@ class TaskCli:
 
         # ------------------------ add ------------------------ #
         parser_add = subparsers.add_parser("add", help="Agrega una nueva tarea")
-        parser_add.add_argument("descripción", help="Descripción de la tarea")
+        parser_add.add_argument("descripcion", help="Descripción de la tarea")
         parser_add.set_defaults(func =self._cmd_add)
 
         # ------------------------ update ------------------------ #
         parser_update = subparsers.add_parser("update", help="Cambia descripción de tarea")
+        parser_update.add_argument("id", type=int, help="id de la tarea")
+        parser_update.add_argument("descripcion", help="Descripción de la tarea")
         parser_update.set_defaults(func =self._cmd_update)
 
         # ------------------------ delete ------------------------ #
@@ -28,11 +30,13 @@ class TaskCli:
         parser_delete.set_defaults(func =self._cmd_delete)
 
         # ------------------------ mark-done ------------------------ #
-        parser_mark = subparsers.add_parser("mark-done", help="Marca 'done' una tarea")
-        parser_mark.set_defaults(func =self._cmd_mark)
+        parser_mark_done = subparsers.add_parser("mark-done", status="done", help="Marca 'done' una tarea")
+        parser_mark_done.add_argument("id", type=int, help="id de la tarea")
+        parser_mark_done.set_defaults(func =self._cmd_mark)
         # ------------------------ mark-in-progress ------------------------ #
-        parser_mark = subparsers.add_parser("mark-in-progress", help="Marca 'in-progress' una tarea")
-        parser_mark.set_defaults(func=self._cmd_mark)
+        parser_mark_in_progress = subparsers.add_parser("mark-in-progress", status="in-progress", help="Marca 'in-progress' una tarea")
+        parser_mark_in_progress.add_argument("id", type=int, help="id de la tarea")
+        parser_mark_in_progress.set_defaults(func=self._cmd_mark)
         # ------------------------ list ------------------------ #
         parser_list = subparsers.add_parser("list", help="Lista todas las tareas")
         parser_list.set_defaults(func =self._cmd_list)
@@ -44,41 +48,14 @@ class TaskCli:
     def _cmd_add(self, args: argparse.Namespace) -> None:
         self._manager.add(args.descripcion)
 
-    def _cmd_update(self, descripcion: list[str]) -> None:
-        largo_descripcion = len(descripcion)
-        if largo_descripcion != 2:
-            raise ValueError(f"Se proporcionaron {largo_descripcion} argumentos, se esperaban solo 2 argumentos para el subcomando update"
-                             f" el id de la tarea y la descripcion nueva")
-        identificador: str = descripcion[0]
-        descripcion: str = descripcion[1]
-        try:
-            _id: int = int(identificador)
-        except ValueError:
-            raise ValueError("El valor asignado al identificador no es un int")
-        self._manager.update(_id, descripcion)
+    def _cmd_update(self, args: argparse.Namespace) -> None:
+        self._manager.update(args.id, args.descripcion)
 
     def _cmd_delete(self, args: argparse.Namespace) -> None:
         self._manager.delete(args.id)
 
-    def _cmd_mark(self, descripcion: list[str]) -> None:
-        elementos = len(descripcion)
-        accion: str = descripcion[0]
-        if elementos != 2:
-            raise ValueError(
-                f"Se proporcionaron {elementos} argumentos, se esperaba 1 solo argumentos para el subcomando mark-{accion}"
-                f" el id de la tarea a marcar")
-        if descripcion[0] == "":
-            raise ValueError(
-                f"Se proporcionaron 0 argumentos, se esperaba 1 solo argumentos para el subcomando mark-{accion}"
-                f" el id de la tarea a marcar")
-
-        descripcion: list[str] = descripcion[1:]
-        identificador: str = descripcion[0]
-        try:
-            _id: int = int(identificador)
-        except ValueError:
-            raise ValueError("El valor asignado al identificador no es un int")
-        self._manager.mark(accion, _id)
+    def _cmd_mark(self, args: argparse.Namespace) -> None:
+        self._manager.mark(args.status, args.id)
 
     def _cmd_list(self, descripcion: list[str]):
         cantidad_argumentos = len(descripcion)
