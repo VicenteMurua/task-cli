@@ -12,9 +12,7 @@ class TaskCli:
             "add": self._cmd_add,
             "update": self._cmd_update,
             "delete": self._cmd_delete,
-            "mark-in-progress": self._cmd_mark,
-            "mark-done": self._cmd_mark,
-            "mark-todo": self._cmd_mark,
+            "mark": self._cmd_mark,
             "list": self._cmd_list,
         }
         largo_comando_entrada = len(command)
@@ -25,7 +23,7 @@ class TaskCli:
         # TODO: quitar ese fix y habilitar todo el programa para que los typehints acepten null
         detalle: list[str] = command[2:] if largo_comando_entrada > 2 else [""]
 
-        if comando not in comandos:
+        if comando.split("-", 1)[0] not in comandos:
             raise ValueError("No se ingreso comando válido")
 
         funcion: str = comando
@@ -77,7 +75,7 @@ class TaskCli:
     def _cmd_mark(self, descripcion: list[str]) -> None:
         elementos = len(descripcion)
         accion: str = descripcion[0]
-        if elementos != 1:
+        if elementos != 2:
             raise ValueError(
                 f"Se proporcionaron {elementos} argumentos, se esperaba 1 solo argumentos para el subcomando mark-{accion}"
                 f" el id de la tarea a marcar")
