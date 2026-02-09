@@ -4,7 +4,7 @@ import sys
 import argparse
 
 
-class TaskCli:
+class CommandInterface:
     _manager: TaskManager
 
     def __init__(self, manager: TaskManager):
