@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
+from dataclasses import dataclass
 from colorama import Fore, Style, init
 init(autoreset=True)
 
@@ -8,6 +9,11 @@ class TaskStatus(Enum):
     TODO = "todo"
     IN_PROGRESS = "in-progress"
     DONE = "done"
+
+
+
+
+
 def update_time_stamp(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -40,12 +46,24 @@ class Task:
         self._updated_at = self._created_at if updated_at is None\
             else updated_at
     @property
-    def task_id(self) -> int:
-        return self._task_id
+    def description(self) -> str:
+        return self._description
 
     @property
     def status(self):
         return self._status
+
+    @property
+    def task_id(self) -> int:
+        return self._task_id
+
+    @property
+    def created_at(self) -> datetime:
+        return self._created_at
+
+    @property
+    def updated_at(self):
+        return self._updated_at
 
     def __str__(self):
         return (
@@ -67,11 +85,42 @@ class Task:
     def update_status(self, status: TaskStatus) -> None:
         self._status = status
 
-    def to_dict(self) -> dict:
+@dataclass()
+class TaskDTO:
+    task_id: int
+    description: str
+    status: str
+    created_at: str
+    updated_at: str
+
+class TaskMapper:
+    @staticmethod
+    def to_task_dto(task: Task) -> TaskDTO:
+        return TaskDTO(
+            task_id = task.task_id,
+            description = task.description,
+            status = task.status.value,
+            created_at = task.created_at.isoformat(),
+            updated_at = task.updated_at.isoformat(),
+        )
+    @staticmethod
+    def from_task_dto(task_dto: TaskDTO) -> Task:
+        status = TaskStatus(task_dto.status)
+        created_at = datetime.fromisoformat(task_dto.created_at)
+        updated_at = datetime.fromisoformat(task_dto.updated_at)
+        return Task(
+            description = task_dto.description,
+            status = status,
+            task_id = task_dto.task_id,
+            created_at = created_at,
+            updated_at = updated_at,
+        )
+    @staticmethod
+    def to_dict(task: Task) -> dict:
         return {
-            "description": self._description,
-            "status": self._status.value,
-            "id": self._task_id,
-            "created_at": self._created_at.isoformat(),
-            "updated_at": self._updated_at.isoformat(),
+            "description": task.description,
+            "status": task.status.value,
+            "id": task.task_id,
+            "created_at": task.created_at.isoformat(),
+            "updated_at": task.updated_at.isoformat(),
         }
