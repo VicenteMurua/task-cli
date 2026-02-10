@@ -45,6 +45,7 @@ class Task:
             else created_at
         self._updated_at = self._created_at if updated_at is None\
             else updated_at
+
     @property
     def description(self) -> str:
         return self._description
@@ -68,10 +69,10 @@ class Task:
     def __str__(self):
         return (
             f"\n{'-' * 100}\n"
-            f"Created: {self._created_at.strftime('%B %d, %Y')}"
-            f" - {Fore.GREEN}Task #{self._task_id} [{self.status.value}] {Style.RESET_ALL}"
-            f" - Updated: {self._updated_at.strftime('%B %d, %Y')}"
-            f"\n {self._description}"
+            f"Created: {self.created_at.strftime('%B %d, %Y')}"
+            f" - {Fore.GREEN}Task #{self.task_id} [{self.status.value}] {Style.RESET_ALL}"
+            f" - Updated: {self.updated_at.strftime('%B %d, %Y')}"
+            f"\n {self.description}"
         )
 
     def _refresh_updated_at(self):
@@ -85,8 +86,8 @@ class Task:
     def update_status(self, status: TaskStatus) -> None:
         self._status = status
 
-@dataclass()
-class TaskDTO:
+@dataclass(frozen=True)
+class TaskDTO():
     task_id: int
     description: str
     status: str
@@ -116,11 +117,21 @@ class TaskMapper:
             updated_at = updated_at,
         )
     @staticmethod
-    def to_dict(task: Task) -> dict:
+    def to_dict(task_dto: TaskDTO) -> dict:
         return {
-            "description": task.description,
-            "status": task.status.value,
-            "id": task.task_id,
-            "created_at": task.created_at.isoformat(),
-            "updated_at": task.updated_at.isoformat(),
+            "description": task_dto.description,
+            "status": task_dto.status,
+            "task_id": task_dto.task_id,
+            "created_at": task_dto.created_at,
+            "updated_at": task_dto.updated_at,
         }
+    @staticmethod #TODO: Generar un typedict
+    def from_dict(data: dict) -> TaskDTO:
+        status = data["status"] if type(data["status"]) is str else TaskStatus(data["status"])
+        return TaskDTO(
+            task_id=data["task_id"],
+            description=data["description"],
+            status=data["status"],
+            created_at=data["created_at"],
+            updated_at=data["updated_at"],
+        )

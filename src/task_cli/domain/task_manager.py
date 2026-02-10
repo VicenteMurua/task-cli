@@ -35,6 +35,7 @@ class TaskManager:
         description, status, task_id, creation, last_actualization = data
         new_task: Task = Task(description, TaskStatus(status), task_id, creation, last_actualization)
         self._dict_tasks[new_task.task_id] = new_task
+
     @save_after
     def update(self, task_id: int, new_description: str) -> None:
         target_task: Task = self._dict_tasks[task_id]
