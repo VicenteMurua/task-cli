@@ -10,10 +10,6 @@ class TaskStatus(Enum):
     IN_PROGRESS = "in-progress"
     DONE = "done"
 
-
-
-
-
 def update_time_stamp(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -87,7 +83,7 @@ class Task:
         self._status = status
 
 @dataclass(frozen=True)
-class TaskDTO():
+class TaskDTO:
     task_id: int
     description: str
     status: str
@@ -127,7 +123,6 @@ class TaskMapper:
         }
     @staticmethod #TODO: Generar un typedict
     def from_dict(data: dict) -> TaskDTO:
-        status = data["status"] if type(data["status"]) is str else TaskStatus(data["status"])
         return TaskDTO(
             task_id=data["task_id"],
             description=data["description"],
