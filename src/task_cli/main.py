@@ -1,10 +1,10 @@
-import sys
 from platformdirs import  user_data_dir
 from pathlib import Path
-
 from task_cli.domain.task_manager import TaskManager
 from task_cli.repository.task_repository import JSONTaskRepository, ITaskRepository
 from task_cli.ui.command_interface import CommandInterface
+
+
 def main():
 
     app_name = "task_cli"
