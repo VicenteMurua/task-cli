@@ -1,4 +1,6 @@
-from task_cli.domain.task import Task, TaskStatus, TaskDTO, TaskMapper
+from task_cli.domain.task import Task, TaskStatus
+from task_cli.domain.dtos import TaskDTO
+from task_cli.repository.mappers import TaskMapper
 from task_cli.repository.task_repository import ITaskRepository
 from functools import wraps
 

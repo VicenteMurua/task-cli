@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from task_cli.domain.task import  TaskDTO, TaskMapper
+from task_cli.domain.dtos import TaskDTO
+from task_cli.repository.mappers import TaskMapper
 
 import json
 
