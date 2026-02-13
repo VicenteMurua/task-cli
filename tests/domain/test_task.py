@@ -1,5 +1,5 @@
 import pytest
-from src.task_cli.domain.task import Task, TaskStatus
+from src.task_cli.domain.task import Task, TaskStatus, time_zone
 from datetime import datetime, timedelta
 
 
@@ -13,6 +13,10 @@ def task_body() -> dict:
         "updated_at": None,
     }
     return body
+
+@pytest.fixture
+def new_task(task_body: dict) -> Task:
+    return Task(**task_body)
 
 class TestTaskInitInitialization:
     assigned_id = 1
@@ -40,6 +44,30 @@ class TestTaskInitInitialization:
         assert new_task.created_at == new_task.updated_at
 
 
+class TestAttributeProtection:
+
+    def test_description(self, new_task: Task) -> None:
+        with pytest.raises(AttributeError):
+            # noinspection PyPropertyAccess
+            new_task.description = "hello"
+    def test_status(self, new_task: Task) -> None:
+        with pytest.raises(AttributeError):
+            # noinspection PyPropertyAccess
+            new_task.status = TaskStatus.IN_PROGRESS
+    def test_task_id(self, new_task: Task) -> None:
+        with pytest.raises(AttributeError):
+            # noinspection PyPropertyAccess
+            new_task.task_id = 5
+    def test_created_at(self, new_task: Task) -> None:
+        with pytest.raises(AttributeError):
+            # noinspection PyPropertyAccess
+            new_task.created_at = datetime.now(time_zone)
+    def test_updated_at(self, new_task: Task) -> None:
+        with pytest.raises(AttributeError):
+            # noinspection PyPropertyAccess
+            new_task.updated_at = datetime.now(time_zone)
+
+
 class TestTaskRules:
 
 
@@ -65,8 +93,8 @@ class TestTaskRules:
     @pytest.mark.parametrize(
         "new_created_at, new_updated_at",
         [
-            (None, datetime.now()),
-            (datetime.now(), None)
+            (None, datetime.now(time_zone)),
+            (datetime.now(time_zone), None)
         ]
     )
     def test_dates_xor(self, task_body:dict, new_created_at, new_updated_at) -> None:
@@ -161,3 +189,7 @@ class TestTaskTypeValidations:
         with pytest.raises(TypeError) as exc:
             Task(**task_body)
         assert str(exc.value) == "UpdatedAt must be a datetime or None"
+
+
+class TestTaskBehavior:
+    pass
