@@ -100,7 +100,7 @@ class Task:
         if not isinstance(new_date, (datetime, type(None))):
             raise ValueError("UpdatedAt must be a datetime or None")
     @staticmethod
-    def _validate_dates_relation(new_created_at: datetime, new_updated_at: datetime) -> None:
+    def _validate_dates_relation(new_created_at: datetime|None, new_updated_at: datetime|None) -> None:
         if (new_created_at is None) ^ (new_updated_at is None):
             raise ValueError("CreatedAt and updatedAt must both be None or defined at the same time")
         if new_created_at is not None and new_updated_at is not None:
