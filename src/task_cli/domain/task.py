@@ -29,18 +29,20 @@ class Task:
             self,
             description: str,
             task_id: int,
-            status: TaskStatus|None = None,
+            status: TaskStatus,
             created_at: datetime|None = None,
             updated_at: datetime|None = None
             ):
-        self.validate_description(description)
-        self.validate_id(task_id)
-        self.validate_status(status)
-        self.validate_dates(created_at, updated_at)
+        self._validate_description(description)
+        self._validate_id(task_id)
+        self._validate_status(status)
+        self._validate_creation_date(created_at)
+        self._validate_updated_date(updated_at)
+        self._validate_dates_relation(new_created_at=created_at, new_updated_at=updated_at)
 
         self._description = description
         self._task_id = task_id
-        self._status = TaskStatus.TODO if status is None else status
+        self._status = status
         self._created_at = datetime.now(timezone.utc) if created_at is None\
             else created_at
         self._updated_at = self._created_at if updated_at is None\
@@ -49,10 +51,18 @@ class Task:
     @property
     def description(self) -> str:
         return self._description
+    @description.setter
+    def description(self, description: str) -> None:
+        self._validate_description(description)
+        self._description = description
 
     @property
     def status(self) -> TaskStatus:
         return self._status
+    @status.setter
+    def status(self, status: TaskStatus|None) -> None:
+        self._validate_status(status)
+        self._status = status
 
     @property
     def task_id(self) -> int:
@@ -65,28 +75,34 @@ class Task:
     @property
     def updated_at(self) -> datetime:
         return self._updated_at
-
-    def validate_description(self, new_description: str) -> None:
+    @staticmethod
+    def _validate_description(new_description: str) -> None:
         if not isinstance(new_description, str):
             raise ValueError("Description must be a string")
         if not new_description.strip():
             raise ValueError("Description cannot be empty")
-    def validate_id(self, new_id: int) -> None:
+    @staticmethod
+    def _validate_id(new_id: int) -> None:
         if not isinstance(new_id, int):
             raise ValueError("ID must be a integer")
         if new_id <= 0:
             raise ValueError("Task ID must be greater than 0")
-    def validate_status(self, new_status: TaskStatus) -> None:
-        if not isinstance(new_status, (TaskStatus, type(None))):
-            raise ValueError("Status must be a TaskStatus o None")
-    def validate_dates(self, new_created_at: datetime, new_updated_at: datetime) -> None:
-        if not isinstance(new_created_at, (datetime, type(None))):
+    @staticmethod
+    def _validate_status(new_status: TaskStatus) -> None:
+        if not isinstance(new_status, TaskStatus):
+            raise ValueError("Status must be a TaskStatus")
+    @staticmethod
+    def _validate_creation_date(new_date: datetime | None) -> None:
+        if not isinstance(new_date, (datetime, type(None))):
             raise ValueError("CreatedAt must be a datetime or None")
-        if not isinstance(new_updated_at, (datetime, type(None))):
+    @staticmethod
+    def _validate_updated_date(new_date: datetime | None) -> None:
+        if not isinstance(new_date, (datetime, type(None))):
             raise ValueError("UpdatedAt must be a datetime or None")
-
+    @staticmethod
+    def _validate_dates_relation(new_created_at: datetime, new_updated_at: datetime) -> None:
         if (new_created_at is None) ^ (new_updated_at is None):
-            raise ValueError("CreatedAt and updatedAt must both be None or defined")
+            raise ValueError("CreatedAt and updatedAt must both be None or defined at the same time")
         if new_created_at is not None and new_updated_at is not None:
             if new_created_at > new_updated_at:
                 raise ValueError("CreatedAt must not be greater than UpdatedAt")
@@ -105,8 +121,8 @@ class Task:
 
     @update_time_stamp
     def update_description(self, new_description: str) -> None:
-        self._description = new_description
+        self.description = new_description
 
     @update_time_stamp
     def update_status(self, status: TaskStatus) -> None:
-        self._status = status
+        self.status = status
