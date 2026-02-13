@@ -51,7 +51,7 @@ class Task:
         return self._description
 
     @property
-    def status(self):
+    def status(self) -> TaskStatus:
         return self._status
 
     @property
@@ -63,7 +63,7 @@ class Task:
         return self._created_at
 
     @property
-    def updated_at(self):
+    def updated_at(self) -> datetime:
         return self._updated_at
 
     def validate_description(self, new_description: str) -> None:
