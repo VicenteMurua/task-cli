@@ -20,11 +20,11 @@ class TaskMapper:
         created_at = datetime.fromisoformat(task_dto.created_at)
         updated_at = datetime.fromisoformat(task_dto.updated_at)
         return Task(
-            description = task_dto.description,
-            status = status,
-            task_id = task_dto.task_id,
-            created_at = created_at,
-            updated_at = updated_at,
+            description=task_dto.description,
+            task_id=task_dto.task_id,
+            status=status,
+            created_at=created_at,
+            updated_at=updated_at
         )
     @staticmethod
     def to_dict(task_dto: TaskDTO) -> dict:

@@ -39,7 +39,7 @@ class TaskManager:
     @load_before
     def add(self, description: str) -> None:
         self._greatest_task_id += 1
-        new_task: Task = Task(description, TaskStatus.TODO, self._greatest_task_id)
+        new_task: Task = Task(description=description, task_id=self._greatest_task_id)
         self._dict_tasks[new_task.task_id] = new_task
     @save_after
     @load_before

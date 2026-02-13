@@ -25,18 +25,31 @@ class Task:
     _created_at: datetime
     _updated_at: datetime
 
-    def __init__(self,
-                 description: str,
-                 status: TaskStatus,
-                 task_id: int,
-                 created_at: datetime | None = None,
-                 updated_at: datetime | None = None,
-                 ):
+    def __init__(
+            self,
+            description: str,
+            task_id: int,
+            status: TaskStatus|None = None,
+            created_at: datetime|None = None,
+            updated_at: datetime|None = None
+            ):
         if (created_at is None) ^ (updated_at is None):
             raise ValueError("CreatedAt and updatedAt must both be None or defined")
+        if created_at is not None and updated_at is not None:
+            if created_at > updated_at:
+                raise ValueError("CreatedAt must not be greater than UpdatedAt")
+        if description is "":
+            raise ValueError("Description cannot be empty")
+        if task_id <= 0:
+            raise ValueError("Task ID must be greater than 0")
+        try:
+            self._status = TaskStatus.DONE if status is None else status
+        except ValueError:
+            raise ValueError(f"invalid task status: {status}")
+
         self._description = description
-        self._status = status
         self._task_id = task_id
+
         self._created_at = datetime.now(timezone.utc) if created_at is None\
             else created_at
         self._updated_at = self._created_at if updated_at is None\

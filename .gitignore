@@ -3,7 +3,7 @@
 
 # IDEs / Editores
 .idea
-
+.vscode
 # Archivos y carpetas de datos / diagramas
 0_Diagramas
 _Diagramas
