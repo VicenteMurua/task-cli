@@ -1,16 +1,14 @@
-from sys import exception
-from typing import Dict
-
 import pytest
 from src.task_cli.domain.task import Task, TaskStatus
+from datetime import datetime, timedelta
 
 
 @pytest.fixture
 def task_body() -> dict:
     body = {
-        "description": "",
+        "description": "Comprar pan",
         "task_id": 1,
-        "status": TaskStatus.DONE,
+        "status": TaskStatus.TODO,
         "created_at": None,
         "updated_at": None,
     }
@@ -19,13 +17,16 @@ def task_body() -> dict:
 class TestTaskInitInitialization:
     assigned_id = 1
     assigned_description = "Nueva Tarea"
+
     @pytest.fixture
     def new_task(self) -> Task:
         """Crea una Task nueva para cada test"""
         return Task(
             description=self.assigned_description,
             task_id=self.assigned_id,
+            status=TaskStatus.TODO,
         )
+
     def test_task_id(self, new_task: Task) -> None:
         assert new_task.task_id == self.assigned_id
 
@@ -33,23 +34,130 @@ class TestTaskInitInitialization:
         assert new_task.description == self.assigned_description
         
     def test_status(self, new_task: Task) -> None:
-        assert new_task.status == TaskStatus.DONE
+        assert new_task.status == TaskStatus.TODO
 
-    def test_time(selfself, new_task: Task) -> None:
+    def test_time(self, new_task: Task) -> None:
         assert new_task.created_at == new_task.updated_at
+
 
 class TestTaskRules:
 
-    def test_has_no_description(self, task_body: Dict) -> None:
+
+    def test_has_no_description(self, task_body: dict) -> None:
         task_body["description"] = ""
         with pytest.raises(ValueError) as exc:
-            bad_task = Task(**task_body)
-        assert  str(exc.value) == "Description cannot be empty"
-    def test_has_space_description(self, task_body: Dict) -> None:
-        task_body["description"] = ""
-        with pytest.raises(ValueError):
-            bad_task = Task(**task_body)
-    def test_has_negative_id(self, task_body: Dict) -> None:
+            Task(**task_body)
+        assert str(exc.value) == "Description cannot be empty"
+
+    def test_has_space_description(self, task_body: dict) -> None:
+        task_body["description"] = "   "
+        with pytest.raises(ValueError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "Description cannot be empty"
+
+
+    def test_has_negative_id(self, task_body: dict) -> None:
         task_body["task_id"] = -1
-        with pytest.raises(ValueError):
-            bad_task = Task(**task_body)
+        with pytest.raises(ValueError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "Task ID must be greater than 0"
+
+    @pytest.mark.parametrize(
+        "new_created_at, new_updated_at",
+        [
+            (None, datetime.now()),
+            (datetime.now(), None)
+        ]
+    )
+    def test_dates_xor(self, task_body:dict, new_created_at, new_updated_at) -> None:
+        task_body["created_at"] = new_created_at
+        task_body["updated_at"] = new_updated_at
+        with pytest.raises(ValueError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "CreatedAt and updatedAt must both be None or defined at the same time"
+
+    def test_date_not_greater(self, task_body: dict) -> None:
+        now = datetime.now()
+        tomorrow = now + timedelta(days=1)
+        task_body["created_at"] = tomorrow
+        task_body["updated_at"] = now
+        with pytest.raises(ValueError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "CreatedAt must not be greater than UpdatedAt"
+
+
+class TestTaskTypeValidations:
+
+    @pytest.mark.parametrize(
+        "description",
+        [
+            None,
+            2,
+            True,
+        ]
+    )
+    def test_description(self, task_body: dict, description) -> None:
+        task_body["description"] = description
+        with pytest.raises(TypeError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "Description must be a string"
+
+
+    @pytest.mark.parametrize(
+        "new_id",
+        [
+            None,
+            "asd",
+            True,
+        ]
+    )
+    def test_task_id(self, task_body: dict, new_id) -> None:
+        task_body["task_id"] = new_id
+        with pytest.raises(TypeError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "ID must be a integer"
+
+
+    @pytest.mark.parametrize(
+        "new_status",
+        [
+            None,
+            "asd",
+            True,
+            12,
+        ]
+    )
+    def test_status(self, task_body, new_status) -> None:
+        task_body["status"] = new_status
+        with pytest.raises(TypeError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "Status must be a TaskStatus"
+    @pytest.mark.parametrize(
+        "new_created_at",
+        [
+            "asdf",
+            True,
+            123,
+        ]
+    )
+
+
+    def test_created_at(self, new_created_at, task_body: dict) -> None:
+        task_body["created_at"] = new_created_at
+        with pytest.raises(TypeError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "CreatedAt must be a datetime or None"
+
+    @pytest.mark.parametrize(
+        "new_updated_at",
+        [
+            "asdf",
+            True,
+            123,
+        ]
+    )
+    def test_updated_at(self, new_updated_at, task_body: dict) -> None:
+        task_body["updated_at"] = new_updated_at
+        with pytest.raises(TypeError) as exc:
+            Task(**task_body)
+        assert str(exc.value) == "UpdatedAt must be a datetime or None"

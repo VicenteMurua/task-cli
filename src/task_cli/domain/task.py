@@ -75,30 +75,36 @@ class Task:
     @property
     def updated_at(self) -> datetime:
         return self._updated_at
+
     @staticmethod
     def _validate_description(new_description: str) -> None:
-        if not isinstance(new_description, str):
-            raise ValueError("Description must be a string")
+        if type(new_description) is not str:
+            raise TypeError("Description must be a string")
         if not new_description.strip():
             raise ValueError("Description cannot be empty")
+
     @staticmethod
     def _validate_id(new_id: int) -> None:
-        if not isinstance(new_id, int):
-            raise ValueError("ID must be a integer")
+        if type(new_id) is not int:
+            raise TypeError("ID must be a integer")
         if new_id <= 0:
             raise ValueError("Task ID must be greater than 0")
+
     @staticmethod
     def _validate_status(new_status: TaskStatus) -> None:
-        if not isinstance(new_status, TaskStatus):
-            raise ValueError("Status must be a TaskStatus")
+        if type(new_status) is not TaskStatus:
+            raise TypeError("Status must be a TaskStatus")
+
     @staticmethod
     def _validate_creation_date(new_date: datetime | None) -> None:
         if not isinstance(new_date, (datetime, type(None))):
-            raise ValueError("CreatedAt must be a datetime or None")
+            raise TypeError("CreatedAt must be a datetime or None")
+
     @staticmethod
     def _validate_updated_date(new_date: datetime | None) -> None:
         if not isinstance(new_date, (datetime, type(None))):
-            raise ValueError("UpdatedAt must be a datetime or None")
+            raise TypeError("UpdatedAt must be a datetime or None")
+
     @staticmethod
     def _validate_dates_relation(new_created_at: datetime|None, new_updated_at: datetime|None) -> None:
         if (new_created_at is None) ^ (new_updated_at is None):
