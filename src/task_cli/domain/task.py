@@ -60,7 +60,7 @@ class Task:
     def status(self) -> TaskStatus:
         return self._status
     @status.setter
-    def status(self, status: TaskStatus|None) -> None:
+    def status(self, status: TaskStatus) -> None:
         self._validate_status(status)
         self._status = status
 
