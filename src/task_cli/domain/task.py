@@ -33,23 +33,14 @@ class Task:
             created_at: datetime|None = None,
             updated_at: datetime|None = None
             ):
-        if (created_at is None) ^ (updated_at is None):
-            raise ValueError("CreatedAt and updatedAt must both be None or defined")
-        if created_at is not None and updated_at is not None:
-            if created_at > updated_at:
-                raise ValueError("CreatedAt must not be greater than UpdatedAt")
-        if description is "":
-            raise ValueError("Description cannot be empty")
-        if task_id <= 0:
-            raise ValueError("Task ID must be greater than 0")
-        try:
-            self._status = TaskStatus.DONE if status is None else status
-        except ValueError:
-            raise ValueError(f"invalid task status: {status}")
+        self.validate_description(description)
+        self.validate_id(task_id)
+        self.validate_status(status)
+        self.validate_dates(created_at, updated_at)
 
         self._description = description
         self._task_id = task_id
-
+        self._status = TaskStatus.TODO if status is None else status
         self._created_at = datetime.now(timezone.utc) if created_at is None\
             else created_at
         self._updated_at = self._created_at if updated_at is None\
@@ -74,6 +65,31 @@ class Task:
     @property
     def updated_at(self):
         return self._updated_at
+
+    def validate_description(self, new_description: str) -> None:
+        if not isinstance(new_description, str):
+            raise ValueError("Description must be a string")
+        if not new_description.strip():
+            raise ValueError("Description cannot be empty")
+    def validate_id(self, new_id: int) -> None:
+        if not isinstance(new_id, int):
+            raise ValueError("ID must be a integer")
+        if new_id <= 0:
+            raise ValueError("Task ID must be greater than 0")
+    def validate_status(self, new_status: TaskStatus) -> None:
+        if not isinstance(new_status, (TaskStatus, type(None))):
+            raise ValueError("Status must be a TaskStatus o None")
+    def validate_dates(self, new_created_at: datetime, new_updated_at: datetime) -> None:
+        if not isinstance(new_created_at, (datetime, type(None))):
+            raise ValueError("CreatedAt must be a datetime or None")
+        if not isinstance(new_updated_at, (datetime, type(None))):
+            raise ValueError("UpdatedAt must be a datetime or None")
+
+        if (new_created_at is None) ^ (new_updated_at is None):
+            raise ValueError("CreatedAt and updatedAt must both be None or defined")
+        if new_created_at is not None and new_updated_at is not None:
+            if new_created_at > new_updated_at:
+                raise ValueError("CreatedAt must not be greater than UpdatedAt")
 
     def __str__(self):
         return (
