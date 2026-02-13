@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
-
 from colorama import Fore, Style, init
 init(autoreset=True)
+time_zone = timezone.utc
+
 
 class TaskStatus(Enum):
     TODO = "todo"
@@ -43,7 +44,7 @@ class Task:
         self._description = description
         self._task_id = task_id
         self._status = status
-        self._created_at = datetime.now(timezone.utc) if created_at is None\
+        self._created_at = datetime.now(time_zone) if created_at is None\
             else created_at
         self._updated_at = self._created_at if updated_at is None\
             else updated_at
@@ -51,16 +52,16 @@ class Task:
     @property
     def description(self) -> str:
         return self._description
-    @description.setter
-    def description(self, description: str) -> None:
+
+    def _set_description(self, description: str) -> None:
         self._validate_description(description)
         self._description = description
 
     @property
     def status(self) -> TaskStatus:
         return self._status
-    @status.setter
-    def status(self, status: TaskStatus) -> None:
+
+    def _set_status(self, status: TaskStatus) -> None:
         self._validate_status(status)
         self._status = status
 
@@ -123,12 +124,12 @@ class Task:
         )
 
     def _refresh_updated_at(self):
-        self._updated_at = datetime.now(timezone.utc)
+        self._updated_at = datetime.now(time_zone)
 
     @update_time_stamp
     def update_description(self, new_description: str) -> None:
-        self.description = new_description
+        self._set_description(new_description)
 
     @update_time_stamp
     def update_status(self, status: TaskStatus) -> None:
-        self.status = status
+        self._set_status(status)
