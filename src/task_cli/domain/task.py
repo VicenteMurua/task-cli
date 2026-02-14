@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
 time_zone = timezone.utc
-
+from src.task_cli.domain.exceptions import TaskValidationError
 
 class TaskStatus(Enum):
     TODO = "todo"
@@ -80,14 +80,14 @@ class Task:
         if type(new_description) is not str:
             raise TypeError("Description must be a string")
         if not new_description.strip():
-            raise ValueError("Description cannot be empty")
+            raise TaskValidationError("Description cannot be empty")
 
     @staticmethod
     def _validate_id(new_id: int) -> None:
         if type(new_id) is not int:
             raise TypeError("ID must be a integer")
         if new_id <= 0:
-            raise ValueError("Task ID must be greater than 0")
+            raise TaskValidationError("Task ID must be greater than 0")
 
     @staticmethod
     def _validate_status(new_status: TaskStatus) -> None:
@@ -107,10 +107,10 @@ class Task:
     @staticmethod
     def _validate_dates_relation(new_created_at: datetime|None, new_updated_at: datetime|None) -> None:
         if (new_created_at is None) ^ (new_updated_at is None):
-            raise ValueError("CreatedAt and updatedAt must both be None or defined at the same time")
+            raise TaskValidationError("CreatedAt and updatedAt must both be None or defined at the same time")
         if new_created_at is not None and new_updated_at is not None:
             if new_created_at > new_updated_at:
-                raise ValueError("CreatedAt must not be greater than UpdatedAt")
+                raise TaskValidationError("CreatedAt must not be greater than UpdatedAt")
 
     def __repr__(self):
         nombre_clase = self.__class__.__name__
