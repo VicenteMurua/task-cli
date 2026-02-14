@@ -1,5 +1,5 @@
 from task_cli.domain.task_manager import TaskManager
-from task_cli.domain.task import Task
+from task_cli.domain.dtos import TaskDTO
 import sys
 import argparse
 
@@ -29,15 +29,15 @@ class CommandInterface:
         self._manager.mark(args.status, args.task_id)
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
-        task_list: list[Task] = list(self._manager.filter_tasks(args.filter).values())
+        task_list: list[TaskDTO] = self._manager.filter_tasks(args.filter)
         if not task_list:
             print(
                 "No tasks are scheduled under this filter. "
                 "You can add a new task with 'add' or change the filter to see other tasks."
             )
             return
-        for task in task_list:
-            print(task)
+        for dto in task_list:
+            print(dto)
 
     def _setup_all_commands(self):
         command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)

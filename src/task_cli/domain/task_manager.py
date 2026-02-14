@@ -63,11 +63,11 @@ class TaskManager:
         self._dict_tasks.update({task_id: target_task})
 
     @load_before
-    def filter_tasks(self, status_filter: str | None) -> dict[int, Task]:
-        filtered_tasks: dict[int, Task] = {}
+    def filter_tasks(self, status_filter: str | None) -> list[TaskDTO]:
+        filtered_tasks: list[TaskDTO] = []
         if status_filter is None:
-            return self._dict_tasks
-        for task_id, task in self._dict_tasks.items():
+            return [TaskMapper.to_task_dto(tarea) for tarea in self._dict_tasks.values()]
+        for task in self._dict_tasks.values():
             if task.status is TaskStatus(status_filter):
-                filtered_tasks.update({task_id: task})
+                filtered_tasks.append(TaskMapper.to_task_dto(task))
         return filtered_tasks
