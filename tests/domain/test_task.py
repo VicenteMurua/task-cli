@@ -2,7 +2,7 @@ import time
 import pytest
 from src.task_cli.domain.task import Task, TaskStatus, time_zone
 from datetime import datetime, timedelta
-
+from src.task_cli.domain.exceptions import TaskValidationError
 
 @pytest.fixture
 def task_body() -> dict:
@@ -82,20 +82,20 @@ class TestTaskRules:
 
     def test_has_no_description(self, task_body: dict) -> None:
         task_body["description"] = ""
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(TaskValidationError) as exc:
             Task(**task_body)
         assert str(exc.value) == "Description cannot be empty"
 
     def test_has_space_description(self, task_body: dict) -> None:
         task_body["description"] = "   "
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(TaskValidationError) as exc:
             Task(**task_body)
         assert str(exc.value) == "Description cannot be empty"
 
 
     def test_has_negative_id(self, task_body: dict) -> None:
         task_body["task_id"] = -1
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(TaskValidationError) as exc:
             Task(**task_body)
         assert str(exc.value) == "Task ID must be greater than 0"
 
@@ -109,7 +109,7 @@ class TestTaskRules:
     def test_dates_xor(self, task_body:dict, new_created_at, new_updated_at, time_now) -> None:
         task_body["created_at"] = time_now if new_created_at == "time_now" else new_created_at
         task_body["updated_at"] = time_now if new_updated_at == "time_now" else new_updated_at
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(TaskValidationError) as exc:
             Task(**task_body)
         assert str(exc.value) == "CreatedAt and updatedAt must both be None or defined at the same time"
 
@@ -117,7 +117,7 @@ class TestTaskRules:
         tomorrow = time_now + timedelta(days=1)
         task_body["created_at"] = tomorrow
         task_body["updated_at"] = time_now
-        with pytest.raises(ValueError) as exc:
+        with pytest.raises(TaskValidationError) as exc:
             Task(**task_body)
         assert str(exc.value) == "CreatedAt must not be greater than UpdatedAt"
 
