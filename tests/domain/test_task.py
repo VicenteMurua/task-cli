@@ -1,3 +1,4 @@
+import time
 import pytest
 from src.task_cli.domain.task import Task, TaskStatus, time_zone
 from datetime import datetime, timedelta
@@ -17,6 +18,10 @@ def task_body() -> dict:
 @pytest.fixture
 def new_task(task_body: dict) -> Task:
     return Task(**task_body)
+
+@pytest.fixture
+def time_now() -> datetime:
+    return datetime.now(time_zone)
 
 class TestTaskInitInitialization:
     assigned_id = 1
@@ -50,22 +55,26 @@ class TestAttributeProtection:
         with pytest.raises(AttributeError):
             # noinspection PyPropertyAccess
             new_task.description = "hello"
+
     def test_status(self, new_task: Task) -> None:
         with pytest.raises(AttributeError):
             # noinspection PyPropertyAccess
             new_task.status = TaskStatus.IN_PROGRESS
+
     def test_task_id(self, new_task: Task) -> None:
         with pytest.raises(AttributeError):
             # noinspection PyPropertyAccess
             new_task.task_id = 5
-    def test_created_at(self, new_task: Task) -> None:
+
+    def test_created_at(self, new_task: Task, time_now) -> None:
         with pytest.raises(AttributeError):
             # noinspection PyPropertyAccess
-            new_task.created_at = datetime.now(time_zone)
-    def test_updated_at(self, new_task: Task) -> None:
+            new_task.created_at = time_now
+
+    def test_updated_at(self, new_task: Task, time_now) -> None:
         with pytest.raises(AttributeError):
             # noinspection PyPropertyAccess
-            new_task.updated_at = datetime.now(time_zone)
+            new_task.updated_at = time_now
 
 
 class TestTaskRules:
@@ -93,22 +102,21 @@ class TestTaskRules:
     @pytest.mark.parametrize(
         "new_created_at, new_updated_at",
         [
-            (None, datetime.now(time_zone)),
-            (datetime.now(time_zone), None)
+            (None, "time_now"),
+            ("time_now", None)
         ]
     )
-    def test_dates_xor(self, task_body:dict, new_created_at, new_updated_at) -> None:
-        task_body["created_at"] = new_created_at
-        task_body["updated_at"] = new_updated_at
+    def test_dates_xor(self, task_body:dict, new_created_at, new_updated_at, time_now) -> None:
+        task_body["created_at"] = time_now if new_created_at == "time_now" else new_created_at
+        task_body["updated_at"] = time_now if new_updated_at == "time_now" else new_updated_at
         with pytest.raises(ValueError) as exc:
             Task(**task_body)
         assert str(exc.value) == "CreatedAt and updatedAt must both be None or defined at the same time"
 
-    def test_date_not_greater(self, task_body: dict) -> None:
-        now = datetime.now()
-        tomorrow = now + timedelta(days=1)
+    def test_date_not_greater(self, task_body: dict, time_now) -> None:
+        tomorrow = time_now + timedelta(days=1)
         task_body["created_at"] = tomorrow
-        task_body["updated_at"] = now
+        task_body["updated_at"] = time_now
         with pytest.raises(ValueError) as exc:
             Task(**task_body)
         assert str(exc.value) == "CreatedAt must not be greater than UpdatedAt"
@@ -191,5 +199,33 @@ class TestTaskTypeValidations:
         assert str(exc.value) == "UpdatedAt must be a datetime or None"
 
 
-class TestTaskBehavior:
-    pass
+class TestTaskUpdate:
+    @pytest.mark.parametrize(
+        "new_description",
+        [
+            "Comprar pan",
+            "Jugar un juego",
+            "Programar",
+        ]
+    )
+    def test_description(self, new_task: Task, new_description) -> None:
+        # permite que pase tiempo suficiente para que la actualización y creación no ocurran muy rapido
+        time.sleep(0.01)
+        new_task.update_description(new_description)
+        assert new_task.description == new_description
+        assert new_task.updated_at > new_task.created_at
+
+    @pytest.mark.parametrize(
+        "new_status",
+        [
+            TaskStatus.TODO,
+            TaskStatus.DONE,
+            TaskStatus.IN_PROGRESS,
+        ]
+    )
+    def test_status(self, new_task: Task, new_status) -> None:
+        # permite que pase tiempo suficiente para que la actualización y creación no ocurran muy rapido
+        time.sleep(0.01)
+        new_task.update_status(new_status)
+        assert new_task.status == new_status
+        assert new_task.updated_at > new_task.created_at

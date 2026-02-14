@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
-from colorama import Fore, Style, init
-init(autoreset=True)
 time_zone = timezone.utc
 
 
@@ -114,14 +112,9 @@ class Task:
             if new_created_at > new_updated_at:
                 raise ValueError("CreatedAt must not be greater than UpdatedAt")
 
-    def __str__(self):
-        return (
-            f"\n{'-' * 100}\n"
-            f"Created: {self.created_at.strftime('%B %d, %Y')}"
-            f" - {Fore.GREEN}Task #{self.task_id} [{self.status.value}] {Style.RESET_ALL}"
-            f" - Updated: {self.updated_at.strftime('%B %d, %Y')}"
-            f"\n {self.description}"
-        )
+    def __repr__(self):
+        nombre_clase = self.__class__.__name__
+        return f"{nombre_clase}({self._task_id=},{self.description=},{self.status=},{self.created_at=},{self.updated_at=})"
 
     def _refresh_updated_at(self):
         self._updated_at = datetime.now(time_zone)
