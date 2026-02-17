@@ -39,50 +39,64 @@ class JSONTaskRepository(ITaskRepository):
 
     def _load_raw_data(self) -> dict[int, dict]:
         self._ensure_file()
-        raw_task_by_id = {}
-        with open(self.path, 'r', encoding='utf-8') as file:
-            task_array = json.load(file)
-            for task_entry in task_array:
-                raw_task_by_id[int(task_entry["task_id"])] = task_entry
-            return raw_task_by_id
+        tasks_by_id: dict[int,dict] = {}
 
-    def _save_raw_data(self, task_by_id: dict[int, dict]) -> None:
-        self._ensure_file()
-        task_json_format: list[dict] = list(task_by_id.values())
+        with open(self.path, 'r', encoding='utf-8') as file:
+            raw_tasks: list[dict] = json.load(file)
+
+        for task_entry in raw_tasks:
+            tasks_by_id[int(task_entry["task_id"])] = task_entry
+
+        return tasks_by_id
+
+    def _save_raw_data(self, tasks_by_id: dict[int, dict]) -> None:
+        task_json_format: list[dict] = list(tasks_by_id.values())
+
         with open(self.path, 'w', encoding='utf-8') as file:
             json.dump(task_json_format, file, ensure_ascii=False, indent=4)
 
     def add(self, new_data: TaskDTO) -> None:
-        information = self._load_raw_data()
-        information[TaskDTO.task_id] = TaskMapper.to_dict(new_data)
-        self._save_raw_data(information)
+        tasks_by_id = self._load_raw_data()
+        tasks_by_id[new_data.task_id] = TaskMapper.to_dict(new_data)
+        self._save_raw_data(tasks_by_id)
 
     def update(self, updated_data: TaskDTO) -> None:
-        information = self._load_raw_data()
-        if updated_data.task_id not in information:
+        tasks_by_id = self._load_raw_data()
+
+        if updated_data.task_id not in tasks_by_id:
             raise TaskNotFoundError(f"Task with id {updated_data.task_id} not found, cant update")
-        information[TaskDTO.task_id] = TaskMapper.to_dict(updated_data)
-        self._save_raw_data(information)
+
+        tasks_by_id[updated_data.task_id] = TaskMapper.to_dict(updated_data)
+        self._save_raw_data(tasks_by_id)
 
     def delete(self, id_to_delete: int) -> None:
-        information = self._load_raw_data()
-        if id_to_delete not in information:
+        tasks_by_id = self._load_raw_data()
+
+        if id_to_delete not in tasks_by_id:
             raise TaskNotFoundError(f"Task with id {id_to_delete} not found, cant delete")
-        del information[TaskDTO.task_id]
-        self._save_raw_data(information)
 
+        del tasks_by_id[id_to_delete]
+        self._save_raw_data(tasks_by_id)
+
+#TODO: Interfaz para usar esto
     def read(self, id_to_read: int) -> TaskDTO:
-        information = self._load_raw_data()
-        if id_to_read not in information:
-            raise TaskNotFoundError(f"Task with id {id_to_read} not found, cant read")
-        return TaskMapper.from_dict(information[id_to_read])
+        tasks_by_id = self._load_raw_data()
 
-    def filter_by_status(self, status_filter: TaskStatus) -> list[TaskDTO]:
-        information = self._load_raw_data()
-        filtered_tasks: list[TaskDTO] = []
+        if id_to_read not in tasks_by_id:
+            raise TaskNotFoundError(f"Task with id {id_to_read} not found, cant read")
+
+        return TaskMapper.from_dict(tasks_by_id[id_to_read])
+
+    def filter_by_status(self, status_filter: TaskStatus|None) -> list[TaskDTO]:
+        tasks_by_id = self._load_raw_data()
+
         if status_filter is None:
-            return [TaskMapper.from_dict(task) for task in information.values()]
-        for task in information.values():
-            if task["status"] == TaskStatus(status_filter).value:
-                filtered_tasks.append(TaskMapper.from_dict(task))
-        return filtered_tasks
+            return [
+                TaskMapper.from_dict(task)
+                for task in tasks_by_id.values()
+            ]
+        return [
+            TaskMapper.from_dict(task)
+            for task in tasks_by_id.values()
+            if task["status"] == status_filter.value
+        ]
