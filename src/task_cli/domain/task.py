@@ -122,8 +122,10 @@ class Task:
 
     @update_time_stamp
     def update_description(self, new_description: str) -> None:
+        self._validate_description(new_description)
         self._set_description(new_description)
 
     @update_time_stamp
     def update_status(self, status: TaskStatus) -> None:
+        self._validate_status(status)
         self._set_status(status)
