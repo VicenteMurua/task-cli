@@ -8,6 +8,9 @@ from task_cli.repository.mappers import TaskMapper
 import json
 
 class ITaskRepository(ABC):
+    @abstractmethod
+    def get_max_id(self) -> int:
+        pass
 
     @abstractmethod
     def add(self, new_data: TaskDTO) -> None:
@@ -54,6 +57,9 @@ class JSONTaskRepository(ITaskRepository):
 
         with open(self.path, 'w', encoding='utf-8') as file:
             json.dump(task_json_format, file, ensure_ascii=False, indent=4)
+    def get_max_id(self) -> int:
+        tasks_by_id = self._load_raw_data()
+        return max(tasks_by_id.keys(), default=0)
 
     def add(self, new_data: TaskDTO) -> None:
         tasks_by_id = self._load_raw_data()
