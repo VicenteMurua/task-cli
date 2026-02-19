@@ -7,7 +7,6 @@ from task_cli.repository.task_repository import ITaskRepository
 class TaskManager:
     def __init__(self, repository: ITaskRepository) -> None:
         self._repository: ITaskRepository = repository
-        self._dict_tasks: dict[int, Task] = {}
 
     def add(self, description: str) -> None:
         new_id: int = self._repository.get_max_id() + 1
