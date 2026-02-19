@@ -92,7 +92,7 @@ class JSONTaskRepository(ITaskRepository):
 
         return TaskMapper.from_dict(tasks_by_id[id_to_read])
 
-    def filter_by_status(self, status_filter: TaskStatus|None) -> list[TaskDTO]:
+    def filter_by_status(self, status_filter: TaskStatus|None = None) -> list[TaskDTO]:
         tasks_by_id = self._load_raw_data()
 
         if status_filter is None:
@@ -100,6 +100,10 @@ class JSONTaskRepository(ITaskRepository):
                 TaskMapper.from_dict(task)
                 for task in tasks_by_id.values()
             ]
+
+        if not isinstance(status_filter, TaskStatus):
+            raise ValueError(f"Invalid status filter: {status_filter}")
+
         return [
             TaskMapper.from_dict(task)
             for task in tasks_by_id.values()

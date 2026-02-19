@@ -4,8 +4,9 @@ from task_cli.domain.exceptions import TaskAlreadyExistsError, TaskNotFoundError
 from task_cli.repository.mappers import TaskMapper
 from task_cli.repository.task_repository import JSONTaskRepository
 from task_cli.domain.dtos import TaskDTO
+from task_cli.domain.task import TaskStatus
 import pytest
-from tests.fakes.fake_dtos import fake_dto_list_no_duplicates, fake_dto_1, fake_dto_1_modified
+from tests.fakes.fake_dtos import fake_dto_list_no_duplicates, fake_dto_1, fake_dto_2, fake_dto_1_modified, fake_dto_3_done, fake_dto_4_in_progress
 
 
 class TestJSONTaskRepository:
@@ -77,3 +78,33 @@ class TestJSONTaskRepository:
         with pytest.raises(TaskNotFoundError):
             repo.read(fake_dto_1.task_id)
 
+
+    def test_filter_by_status_none(self, repo: JSONTaskRepository):
+        for data in fake_dto_list_no_duplicates:
+            repo.add(data)
+        result = repo.filter_by_status(None)
+        assert len(fake_dto_list_no_duplicates) == len(result)
+        assert result == fake_dto_list_no_duplicates
+
+    @pytest.mark.parametrize(
+        "status, output",
+        [
+            (TaskStatus.TODO, [fake_dto_1, fake_dto_2]),
+            (TaskStatus.DONE, [fake_dto_3_done]),
+            (TaskStatus.IN_PROGRESS, [fake_dto_4_in_progress]),
+        ]
+    )
+    def test_filter_by_status(self, repo: JSONTaskRepository, status: TaskStatus, output: list[TaskDTO]):
+        for data in fake_dto_list_no_duplicates:
+            repo.add(data)
+        assert output == repo.filter_by_status(status)
+
+    def test_filter_by_wrong_status(self, repo: JSONTaskRepository):
+        with pytest.raises(ValueError):
+            repo.filter_by_status("zapallo") #type: ignore[arg-type]
+
+# TODO: Tests de robustez / condiciones adversas
+# - Qué pasa si el archivo JSON está corrupto o vacío
+# - Qué pasa si se pasan IDs inválidos (negativos, strings)
+# - Validación de concurrencia (si se agregan/actualizan tareas simultáneamente)
+# - Manejo de errores de I/O (permiso denegado, disco lleno, etc.)
