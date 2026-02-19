@@ -1,8 +1,8 @@
 import time
 import pytest
-from src.task_cli.domain.task import Task, TaskStatus, time_zone
+from task_cli.domain.task import Task, TaskStatus, time_zone
 from datetime import datetime, timedelta
-from src.task_cli.domain.exceptions import TaskValidationError
+from task_cli.domain.exceptions import TaskValidationError
 
 @pytest.fixture
 def task_body() -> dict:

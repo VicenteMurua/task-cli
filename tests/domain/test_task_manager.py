@@ -1,6 +1,6 @@
 import pytest
 from tests.fakes.fake_repository import  FakeTaskRepository
-from src.task_cli.domain.task_manager import TaskManager
+from task_cli.domain.task_manager import TaskManager
 
 
 @pytest.fixture

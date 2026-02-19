@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
+from task_cli.domain.exceptions import TaskValidationError
 time_zone = timezone.utc
-from src.task_cli.domain.exceptions import TaskValidationError
+
 
 class TaskStatus(Enum):
     TODO = "todo"

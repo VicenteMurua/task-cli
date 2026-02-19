@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from task_cli.domain.dtos import TaskDTO
-from task_cli.domain.exceptions import TaskNotFoundError
+from task_cli.domain.exceptions import TaskNotFoundError, TaskAlreadyExistsError
 from task_cli.domain.task import TaskStatus
 from task_cli.repository.mappers import TaskMapper
 
@@ -26,7 +26,7 @@ class ITaskRepository(ABC):
         pass
 
     @abstractmethod
-    def filter_by_status(self, status: TaskStatus) -> list[TaskDTO]:
+    def filter_by_status(self, status: TaskStatus|None) -> list[TaskDTO]:
         pass
 
 class JSONTaskRepository(ITaskRepository):
@@ -57,7 +57,12 @@ class JSONTaskRepository(ITaskRepository):
 
     def add(self, new_data: TaskDTO) -> None:
         tasks_by_id = self._load_raw_data()
+
+        if new_data.task_id in tasks_by_id:
+            raise TaskAlreadyExistsError(f"Task with id {new_data.task_id} already exists")
+
         tasks_by_id[new_data.task_id] = TaskMapper.to_dict(new_data)
+
         self._save_raw_data(tasks_by_id)
 
     def update(self, updated_data: TaskDTO) -> None:

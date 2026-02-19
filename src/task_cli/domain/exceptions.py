@@ -6,3 +6,6 @@ class TaskValidationError(TaskException, ValueError):
 
 class TaskNotFoundError(TaskException, KeyError):
     pass
+
+class TaskAlreadyExistsError(TaskException, ValueError):
+    pass

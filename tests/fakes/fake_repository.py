@@ -1,5 +1,5 @@
-from src.task_cli.repository.task_repository import ITaskRepository
-from src.task_cli.domain.dtos import TaskDTO
+from task_cli.repository.task_repository import ITaskRepository
+from task_cli.domain.dtos import TaskDTO
 
 
 class FakeTaskRepository(ITaskRepository):

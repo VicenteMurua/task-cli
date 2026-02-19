@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from task_cli.domain.task import Task, TaskStatus
 from task_cli.domain.dtos import TaskDTO
 
