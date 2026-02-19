@@ -36,4 +36,6 @@ class TaskManager:
         self._repository.update(TaskMapper.to_task_dto(target_task))
 
     def filter_tasks(self, status_filter: str | None) -> list[TaskDTO]:
+        if status_filter is None:
+            return self._repository.filter_by_status(None)
         return self._repository.filter_by_status(TaskStatus(status_filter))
