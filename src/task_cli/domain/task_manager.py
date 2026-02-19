@@ -9,10 +9,6 @@ class TaskManager:
         self._repository: ITaskRepository = repository
         self._dict_tasks: dict[int, Task] = {}
 
-    def _add_existing_task(self, data: TaskDTO) -> None:
-        new_task: Task = TaskMapper.from_task_dto(data)
-        self._dict_tasks[new_task.task_id] = new_task
-
     def add(self, description: str) -> None:
         new_id: int = self._repository.get_max_id() + 1
         new_task: Task = Task(
