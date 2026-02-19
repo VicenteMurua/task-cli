@@ -2,77 +2,42 @@ from task_cli.domain.task import Task, TaskStatus
 from task_cli.domain.dtos import TaskDTO
 from task_cli.repository.mappers import TaskMapper
 from task_cli.repository.task_repository import ITaskRepository
-from functools import wraps
 
-def save_after(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        resultado = func(self, *args, **kwargs)
-        self._save()  # llama al method privado de la clase
-        return resultado
-    return wrapper
-def load_before(func):
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        self._load()   # llama al method privado de la clase
-        resultado = func(self, *args, **kwargs)
-        return resultado
-    return wrapper
 
 class TaskManager:
     def __init__(self, repository: ITaskRepository) -> None:
         self._repository: ITaskRepository = repository
         self._dict_tasks: dict[int, Task] = {}
-        self._greatest_task_id: int = 0
-
-    def _load(self):
-        for data in self._repository.load():
-            self._add_existing_task(data)
-        self._greatest_task_id: int = max(self._dict_tasks.keys(), default=0)
-
-    def _save(self):
-        self._repository.save([TaskMapper.to_task_dto(task) for task  in list(self._dict_tasks.values())])
 
     def _add_existing_task(self, data: TaskDTO) -> None:
         new_task: Task = TaskMapper.from_task_dto(data)
         self._dict_tasks[new_task.task_id] = new_task
 
-    @save_after
-    @load_before
     def add(self, description: str) -> None:
-        self._greatest_task_id += 1
+        new_id: int = self._repository.get_max_id() + 1
         new_task: Task = Task(
             description=description,
-            task_id=self._greatest_task_id,
+            task_id=new_id,
             status=TaskStatus.TODO
         )
-        self._dict_tasks[new_task.task_id] = new_task
+        new_task_dto: TaskDTO = TaskMapper.to_task_dto(new_task)
+        self._repository.add(new_task_dto)
 
-    @save_after
-    @load_before
     def update(self, task_id: int, new_description: str) -> None:
-        target_task: Task = self._dict_tasks[task_id]
+        target_dto: TaskDTO = self._repository.read(task_id)
+        target_task: Task = TaskMapper.from_task_dto(target_dto)
         target_task.update_description(new_description)
-        self._dict_tasks.update({task_id: target_task})
+        self._repository.update(TaskMapper.to_task_dto(target_task))
 
-    @save_after
-    @load_before
+
     def delete(self, task_id: int) -> None:
-        del self._dict_tasks[task_id]
+        self._repository.delete(task_id)
 
-    @save_after
-    @load_before
     def mark(self, status: str, task_id: int) -> None:
-        target_task: Task = self._dict_tasks[task_id]
+        target_dto: TaskDTO = self._repository.read(task_id)
+        target_task: Task = TaskMapper.from_task_dto(target_dto)
         target_task.update_status(TaskStatus(status))
-        self._dict_tasks.update({task_id: target_task})
+        self._repository.update(TaskMapper.to_task_dto(target_task))
 
-    @load_before
     def filter_tasks(self, status_filter: str | None) -> list[TaskDTO]:
-        filtered_tasks: list[TaskDTO] = []
-        if status_filter is None:
-            return [TaskMapper.to_task_dto(tarea) for tarea in self._dict_tasks.values()]
-        for task in self._dict_tasks.values():
-            if task.status is TaskStatus(status_filter):
-                filtered_tasks.append(TaskMapper.to_task_dto(task))
-        return filtered_tasks
+        return self._repository.filter_by_status(status_filter)
