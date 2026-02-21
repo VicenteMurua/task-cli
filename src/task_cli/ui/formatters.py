@@ -45,9 +45,9 @@ class TableStyle:
 class TaskCliFormatter:
 
     _STATUS_ICON = {
-        TaskStatus.TODO.value: Fore.YELLOW + "○" + Style.RESET_ALL,
-        TaskStatus.IN_PROGRESS.value: Fore.CYAN + "◐" + Style.RESET_ALL,
-        TaskStatus.DONE.value: Fore.GREEN + "●" + Style.RESET_ALL,
+        TaskStatus.TODO.value: Fore.YELLOW + "▷" + Style.RESET_ALL,
+        TaskStatus.IN_PROGRESS.value: Fore.CYAN + "▶" + Style.RESET_ALL,
+        TaskStatus.DONE.value: Fore.GREEN + "✓" + Style.RESET_ALL,
     }
 
     _COLUMNS = [
@@ -92,8 +92,8 @@ class TaskCliFormatter:
             cls._format_cell(
                 value,
                 column["width"],
-                column.get("align", "<"),
-                column.get("fill", " ")
+                "^",
+                " "
             )
             for value, column in zip(values, cls._COLUMNS)
         ]
