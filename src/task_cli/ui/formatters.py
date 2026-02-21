@@ -50,12 +50,14 @@ class TaskCliFormatter:
         TaskStatus.IN_PROGRESS.value: Fore.CYAN + "◐" + Style.RESET_ALL,
         TaskStatus.DONE.value: Fore.GREEN + "●" + Style.RESET_ALL,
     }
+
     _COLUMNS = [
         {"name": "ID", "width": 4, "align": ">", "fill": "0"},
         {"name": "@", "width": 1, "align": "^"},
         {"name": "Status", "width": len(TaskStatus.IN_PROGRESS.value), "align": "<"},
         {"name": "Description", "width": 50, "align": "<"},
     ]
+
     @staticmethod
     def _format_cell(value: str, width: int, align: str = "<", fill: str = " ") -> str:
         return f"{value:{fill}{align}{width}}"
@@ -142,8 +144,6 @@ class TaskCliFormatter:
         top_sep, mid_sep, bot_sep = cls._get_row_separators(style=style)
         table: str = top_sep + mid_sep.join(no_format_table) + bot_sep
         return table
-
-    from datetime import datetime
 
     @classmethod
     def format_task_detail(cls, task: TaskDTO, style: TableStyle) -> str:
