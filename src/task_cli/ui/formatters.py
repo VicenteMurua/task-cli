@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.task import TaskStatus
 from colorama import init, Fore, Back, Style
