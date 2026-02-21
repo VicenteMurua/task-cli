@@ -1,3 +1,4 @@
+from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
 import sys
@@ -36,8 +37,8 @@ class CommandInterface:
                 "You can add a new task with 'add' or change the filter to see other tasks."
             )
             return
-        for dto in task_list:
-            print(dto)
+        print(TaskCliFormatter.format_task_table(task_list, TableStyle(False)))
+
 
     def _setup_all_commands(self):
         command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)
