@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.task import TaskStatus
 from colorama import init, Fore, Back, Style
@@ -59,7 +61,7 @@ class TaskCliFormatter:
         return f"{value:{fill}{align}{width}}"
 
     @classmethod
-    def format_task(cls, task: TaskDTO, style: TableStyle) -> str:
+    def _format_task(cls, task: TaskDTO, style: TableStyle) -> str:
         status_icon = cls._STATUS_ICON.get(task.status, "?")
 
         values = [
@@ -83,7 +85,7 @@ class TaskCliFormatter:
         return f"{border} " + f" {border} ".join(cells) + f" {border}"
 
     @classmethod
-    def format_header(cls, style: TableStyle) -> str:
+    def _format_header(cls, style: TableStyle) -> str:
         values = [column["name"] for column in cls._COLUMNS]
         cells = [
             cls._format_cell(
@@ -99,7 +101,7 @@ class TaskCliFormatter:
         return f"{border} " + f" {border} ".join(cells) + f" {border}"
 
     @classmethod
-    def format_row(cls, style: TableStyle, mode: str|None = None) -> str:
+    def _format_row(cls, style: TableStyle, mode: str | None = None) -> str:
         widths = [column["width"] for column in cls._COLUMNS]
         sep = style.row_sep
         cells = [sep*width for width in widths]
@@ -111,19 +113,93 @@ class TaskCliFormatter:
             return f"\n{style.t_left}{sep}" + f"{sep}{style.intersection}{sep}".join(cells) + f"{sep}{style.t_right}\n"
 
     @classmethod
-    def format_task_list(cls, task_list: list[TaskDTO], style: TableStyle) -> list[str]:
-        return [cls.format_task(task, style=style) for task in task_list]
+    def _format_task_list(cls, task_list: list[TaskDTO], style: TableStyle) -> list[str]:
+        return [cls._format_task(task, style=style) for task in task_list]
 
     @classmethod
-    def format_task_table(cls, tasks: list[TaskDTO]|TaskDTO, style: TableStyle) -> str:
-        header: str =cls.format_header(style=style)
-        if isinstance(tasks, TaskDTO):
-            tasks = [tasks]
-        body: list[str] = cls.format_task_list(tasks, style=style)
-        no_format_table: list[str] = [header] + body
+    def _get_row_separators(cls, style: TableStyle) -> tuple[str,str,str]:
+        top: str = cls._format_row(style=style, mode="top")
+        mid: str = cls._format_row(style=style)
+        bot: str = cls._format_row(style=style, mode="bot")
+        return top, mid, bot
 
-        top_sep: str = cls.format_row(style=style, mode="top")
-        mid_sep: str = cls.format_row(style=style)
-        bot_sep: str = cls.format_row(style=style, mode="bot")
+    @classmethod
+    def format_task_table(cls, task: TaskDTO, style: TableStyle) -> str:
+        header: str = cls._format_header(style=style)
+        body: str = cls._format_task(task, style=style)
+        no_format_table: list[str] = [header,body]
+
+        top_sep, mid_sep, bot_sep = cls._get_row_separators(style=style)
         table: str = top_sep + mid_sep.join(no_format_table) + bot_sep
         return table
+
+    @classmethod
+    def format_tasks_table(cls, tasks: list[TaskDTO], style: TableStyle) -> str:
+        header: str =cls._format_header(style=style)
+        body: list[str] = cls._format_task_list(tasks, style=style)
+        no_format_table: list[str] = [header,*body]
+
+        top_sep, mid_sep, bot_sep = cls._get_row_separators(style=style)
+        table: str = top_sep + mid_sep.join(no_format_table) + bot_sep
+        return table
+
+    from datetime import datetime
+
+    @classmethod
+    def format_task_detail(cls, task: TaskDTO, style: TableStyle) -> str:
+        created = datetime.fromisoformat(task.created_at)
+        updated = datetime.fromisoformat(task.updated_at)
+
+        sep = style.row_sep
+        border = style.cell_border
+
+        # contenido
+        left_top = f"ID: {task.task_id}"
+        right_top = f"Status: {task.status}"
+
+        description = f"Description: {task.description}"
+
+        left_bot = f"Created: {created.strftime('%Y-%m-%d %H:%M')}"
+        right_bot = f"Updated: {updated.strftime('%Y-%m-%d %H:%M')}"
+
+        # ancho total dinámico
+        col_width = max(
+            len(left_top), len(right_top),
+            len(left_bot), len(right_bot)
+        )
+
+        total_width = col_width * 2 + 3  # 2 columnas + divisor central
+        separator = sep * (col_width + 2)
+        top_union = separator + style.t_top + separator
+        bot_union = separator + style.t_bot + separator
+        top = f"\n{style.corner_tl}{top_union}{style.corner_tr}\n"
+        mid_top = f"\n{style.t_left}{bot_union}{style.t_right}\n"
+        mid_bot = f"\n{style.t_left}{top_union}{style.t_right}\n"
+        bot = f"\n{style.corner_bl}{bot_union}{style.corner_br}\n"
+
+        status_icon = cls._STATUS_ICON[task.status]
+        # filas divididas
+        row1 = (
+            f"{border} "
+            f"{left_top.ljust(col_width)}"
+            " │ "
+            f"{right_top.ljust(col_width - 2)} "
+            f"{status_icon} "
+            f"{border}"
+        )
+
+        row2 = (
+            f"{border} "
+            f"{description.ljust(total_width)} "
+            f"{border}"
+        )
+
+        row3 = (
+            f"{border} "
+            f"{left_bot.ljust(col_width)}"
+            " │ "
+            f"{right_bot.ljust(col_width)} "
+            f"{border}"
+        )
+
+        return top + row1 + mid_top + row2 + mid_bot + row3 + bot

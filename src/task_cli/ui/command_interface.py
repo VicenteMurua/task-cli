@@ -28,7 +28,10 @@ class CommandInterface:
 
     def _cmd_read(self, args: argparse.Namespace) -> None:
         task: TaskDTO = self._manager.read(args.task_id)
-        print(TaskCliFormatter.format_task_table(task, TableStyle(False)))
+        if args.detail:
+            print(TaskCliFormatter.format_task_detail(task, TableStyle(False)))
+        else:
+            print(TaskCliFormatter.format_task_table(task, TableStyle(False)))
 
     def _cmd_mark(self, args: argparse.Namespace) -> None:
         self._manager.mark(args.status, args.task_id)
@@ -41,7 +44,7 @@ class CommandInterface:
                 "You can add a new task with 'add' or change the filter to see other tasks."
             )
             return
-        print(TaskCliFormatter.format_task_table(task_list, TableStyle(False)))
+        print(TaskCliFormatter.format_tasks_table(task_list, TableStyle(False)))
 
 
     def _setup_all_commands(self):
@@ -102,6 +105,12 @@ class CommandInterface:
             "task_id",
             type = int,
             help = "ID of the task to be readd"
+        )
+        parser_read.add_argument(
+            "-d",
+            "--detail",
+            action="store_true",
+            help="Show detailed view"
         )
         parser_read.set_defaults(func = self._cmd_read)
 
