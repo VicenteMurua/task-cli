@@ -28,6 +28,9 @@ class TaskManager:
     def delete(self, task_id: int) -> None:
         self._repository.delete(task_id)
 
+    def read(self, task_id: int) -> TaskDTO:
+        return self._repository.read(task_id)
+
     def mark(self, status: str, task_id: int) -> None:
         target_dto: TaskDTO = self._repository.read(task_id)
         target_task: Task = TaskMapper.from_task_dto(target_dto)

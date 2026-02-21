@@ -26,6 +26,10 @@ class CommandInterface:
     def _cmd_delete(self, args: argparse.Namespace) -> None:
         self._manager.delete(args.task_id)
 
+    def _cmd_read(self, args: argparse.Namespace) -> None:
+        task: TaskDTO = self._manager.read(args.task_id)
+        print(TaskCliFormatter.format_task_table(task, TableStyle(False)))
+
     def _cmd_mark(self, args: argparse.Namespace) -> None:
         self._manager.mark(args.status, args.task_id)
 
@@ -48,6 +52,7 @@ class CommandInterface:
         self._setup_mark_done_command(command_registry)
         self._setup_mark_in_progress_command(command_registry)
         self._setup_list_command(command_registry)
+        self._setup_read_command(command_registry)
 
     def _setup_add_command(self, command_registry: argparse._SubParsersAction):
         parser_add = command_registry.add_parser(
@@ -87,6 +92,18 @@ class CommandInterface:
             help = "ID of the task to be deleted"
         )
         parser_delete.set_defaults(func = self._cmd_delete)
+
+    def _setup_read_command(self, command_registry: argparse._SubParsersAction):
+        parser_read = command_registry.add_parser(
+            "read",
+            help = "Read a task from the list"
+        )
+        parser_read.add_argument(
+            "task_id",
+            type = int,
+            help = "ID of the task to be readd"
+        )
+        parser_read.set_defaults(func = self._cmd_read)
 
     def _setup_mark_done_command(self, command_registry: argparse._SubParsersAction):
         parser_mark_done = command_registry.add_parser(

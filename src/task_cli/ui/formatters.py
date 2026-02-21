@@ -115,9 +115,11 @@ class TaskCliFormatter:
         return [cls.format_task(task, style=style) for task in task_list]
 
     @classmethod
-    def format_task_table(cls, task_list: list[TaskDTO], style: TableStyle) -> str:
+    def format_task_table(cls, tasks: list[TaskDTO]|TaskDTO, style: TableStyle) -> str:
         header: str =cls.format_header(style=style)
-        body: list[str] = cls.format_task_list(task_list, style=style)
+        if isinstance(tasks, TaskDTO):
+            tasks = [tasks]
+        body: list[str] = cls.format_task_list(tasks, style=style)
         no_format_table: list[str] = [header] + body
 
         top_sep: str = cls.format_row(style=style, mode="top")
