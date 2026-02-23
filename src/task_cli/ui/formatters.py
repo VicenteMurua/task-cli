@@ -1,6 +1,7 @@
 from datetime import datetime
 from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.task import TaskStatus
+import textwrap
 import re
 from colorama import init, Fore, Back, Style
 init(autoreset=True)
@@ -9,6 +10,11 @@ init(autoreset=True)
 ANSI_ESCAPE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 def visible_len(s: str) -> int:
     return len(ANSI_ESCAPE.sub('', s))
+
+def truncate(text: str, width: int) -> str:
+    if visible_len(text) <= width:
+        return text
+    return text[:width - 3] + "..."
 
 class TableStyle:
     cell_border: str
@@ -70,11 +76,14 @@ class TaskCliFormatter:
     def _format_task(cls, task: TaskDTO, style: TableStyle) -> str:
         status_icon = cls._STATUS_ICON.get(task.status, "?")
 
+        description_width = cls._COLUMNS[3]["width"]
+        description = truncate(task.description, description_width)
+
         values = [
             str(task.task_id),
             status_icon,
             task.status,
-            task.description,
+            description,
         ]
 
         cells = [
@@ -149,15 +158,58 @@ class TaskCliFormatter:
         table: str = top_sep + mid_sep.join(no_format_table) + bot_sep
         return table
 
+    @staticmethod
+    def _render_two_col_row(left: str, right: str, col_width: int, style: TableStyle, icon: str | None = None) -> str:
+        border = style.cell_border
+        vertical = "│" if style.cell_border != "|" else "|"
+
+        if icon:
+            right = right.ljust(col_width - visible_len(icon) - 1) + " " + icon
+        else:
+            right = right.ljust(col_width)
+
+        return (
+            f"{border} "
+            f"{left.ljust(col_width)} "
+            f"{vertical} "
+            f"{right} "
+            f"{border}"
+        )
+
+    @staticmethod
+    def _render_full_width_block(text: str, width: int, style: TableStyle) -> str:
+        import textwrap
+
+        border = style.cell_border
+        wrapped = textwrap.wrap(text, width=width)
+
+        lines = [
+            f"{border} {line.ljust(width)} {border}"
+            for line in wrapped
+        ]
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def _build_frame(col_width: int, style: TableStyle):
+        sep = style.row_sep
+
+        separator = sep * (col_width + 2)
+        top_union = separator + style.t_top + separator
+        bot_union = separator + style.t_bot + separator
+
+        top = f"\n{style.corner_tl}{top_union}{style.corner_tr}\n"
+        mid_top = f"\n{style.t_left}{bot_union}{style.t_right}\n"
+        mid_bot = f"\n{style.t_left}{top_union}{style.t_right}\n"
+        bot = f"\n{style.corner_bl}{bot_union}{style.corner_br}\n"
+
+        return top, mid_top, mid_bot, bot
+
     @classmethod
     def format_task_detail(cls, task: TaskDTO, style: TableStyle) -> str:
         created = datetime.fromisoformat(task.created_at)
         updated = datetime.fromisoformat(task.updated_at)
 
-        sep = style.row_sep
-        border = style.cell_border
-
-        # contenido
         left_top = f"ID: {task.task_id}"
         right_top = f"Status: {task.status}"
 
@@ -166,44 +218,16 @@ class TaskCliFormatter:
         left_bot = f"Created: {created.strftime('%Y-%m-%d %H:%M')}"
         right_bot = f"Updated: {updated.strftime('%Y-%m-%d %H:%M')}"
 
-        # ancho total dinámico
-        col_width = max(
-            len(left_top), len(right_top),
-            len(left_bot), len(right_bot)
-        )
+        col_width = max(len(left_top), len(right_top),len(left_bot), len(right_bot))
 
-        total_width = col_width * 2 + 3  # 2 columnas + divisor central
-        separator = sep * (col_width + 2)
-        top_union = separator + style.t_top + separator
-        bot_union = separator + style.t_bot + separator
-        top = f"\n{style.corner_tl}{top_union}{style.corner_tr}\n"
-        mid_top = f"\n{style.t_left}{bot_union}{style.t_right}\n"
-        mid_bot = f"\n{style.t_left}{top_union}{style.t_right}\n"
-        bot = f"\n{style.corner_bl}{bot_union}{style.corner_br}\n"
+        total_width = col_width * 2 + 3
+
+        top, mid_top, mid_bot, bot = cls._build_frame(col_width, style)
 
         status_icon = cls._STATUS_ICON[task.status]
-        # filas divididas
-        row1 = (
-            f"{border} "
-            f"{left_top.ljust(col_width)}"
-            " │ "
-            f"{right_top.ljust(col_width - visible_len(status_icon) - 1)} "
-            f"{status_icon} "
-            f"{border}"
-        )
 
-        row2 = (
-            f"{border} "
-            f"{description.ljust(total_width)} "
-            f"{border}"
-        )
-
-        row3 = (
-            f"{border} "
-            f"{left_bot.ljust(col_width)}"
-            " │ "
-            f"{right_bot.ljust(col_width)} "
-            f"{border}"
-        )
+        row1 = cls._render_two_col_row(left_top, right_top, col_width, style, status_icon)
+        row2 = cls._render_full_width_block(description, total_width, style)
+        row3 = cls._render_two_col_row(left_bot, right_bot, col_width, style)
 
         return top + row1 + mid_top + row2 + mid_bot + row3 + bot
