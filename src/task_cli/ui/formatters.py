@@ -1,9 +1,14 @@
 from datetime import datetime
 from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.task import TaskStatus
+import re
 from colorama import init, Fore, Back, Style
 init(autoreset=True)
 
+
+ANSI_ESCAPE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+def visible_len(s: str) -> int:
+    return len(ANSI_ESCAPE.sub('', s))
 
 class TableStyle:
     cell_border: str
@@ -182,7 +187,7 @@ class TaskCliFormatter:
             f"{border} "
             f"{left_top.ljust(col_width)}"
             " │ "
-            f"{right_top.ljust(col_width - 2)} "
+            f"{right_top.ljust(col_width - visible_len(status_icon) - 1)} "
             f"{status_icon} "
             f"{border}"
         )

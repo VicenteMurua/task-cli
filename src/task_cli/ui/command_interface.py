@@ -8,33 +8,59 @@ import argparse
 class CommandInterface:
     _manager: TaskManager
 
-    def __init__(self, manager: TaskManager):
+    def __init__(self, manager: TaskManager, ascii: bool = False) -> None:
         self._manager = manager
         self._parser = argparse.ArgumentParser(prog="task-cli")
         self._setup_all_commands()
+        self.ascii = ascii
 
     def run(self) -> None:
         args = self._parser.parse_args(sys.argv[1:])
         args.func(args)
 
+    @staticmethod
+    def show_feedback(task: TaskDTO, ascii: bool=False) -> None:
+        print("\nYou interacted with this task.")
+        print(TaskCliFormatter.format_task_detail(task, TableStyle(ascii)))
+
+    @staticmethod
+    def quick_show_feedback(task: TaskDTO, ascii: bool=False) -> None:
+        print("\nYou interacted with this task.")
+        print(TaskCliFormatter.format_task_table(task, TableStyle(ascii)))
+
+    @staticmethod
+    def quick_show_list(tasks: list[TaskDTO], ascii: bool=False) -> None:
+        print("\nYou interacted with list.")
+        print(TaskCliFormatter.format_tasks_table(tasks, TableStyle(ascii)))
+
     def _cmd_add(self, args: argparse.Namespace) -> None:
-        self._manager.add(args.description)
+        task:TaskDTO = self._manager.add(args.description)
+        self.show_feedback(task, self.ascii)
+        print("You added a new task.")
 
     def _cmd_update(self, args: argparse.Namespace) -> None:
-        self._manager.update(args.task_id, args.description)
+        task: TaskDTO = self._manager.update(args.task_id, args.description)
+        self.show_feedback(task, self.ascii)
+        print("You updated this task.")
 
     def _cmd_delete(self, args: argparse.Namespace) -> None:
-        self._manager.delete(args.task_id)
+        task: TaskDTO = self._manager.delete(args.task_id)
+        self.show_feedback(task, self.ascii)
+        print("You deleted this task.")
 
     def _cmd_read(self, args: argparse.Namespace) -> None:
         task: TaskDTO = self._manager.read(args.task_id)
         if args.detail:
-            print(TaskCliFormatter.format_task_detail(task, TableStyle(False)))
+            self.show_feedback(task, self.ascii)
+            print("You readed this task.")
         else:
-            print(TaskCliFormatter.format_task_table(task, TableStyle(False)))
+            self.quick_show_feedback(task, self.ascii)
+            print("You readed this task.")
 
     def _cmd_mark(self, args: argparse.Namespace) -> None:
-        self._manager.mark(args.status, args.task_id)
+        task: TaskDTO = self._manager.mark(args.status, args.task_id)
+        self.show_feedback(task, self.ascii)
+        print("You marked this task.")
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
         task_list: list[TaskDTO] = self._manager.filter_tasks(args.filter)
@@ -44,8 +70,7 @@ class CommandInterface:
                 "You can add a new task with 'add' or change the filter to see other tasks."
             )
             return
-        print(TaskCliFormatter.format_tasks_table(task_list, TableStyle(False)))
-
+        self.quick_show_list(task_list, self.ascii)
 
     def _setup_all_commands(self):
         command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)
