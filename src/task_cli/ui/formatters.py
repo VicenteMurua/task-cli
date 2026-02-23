@@ -178,8 +178,6 @@ class TaskCliFormatter:
 
     @staticmethod
     def _render_full_width_block(text: str, width: int, style: TableStyle) -> str:
-        import textwrap
-
         border = style.cell_border
         wrapped = textwrap.wrap(text, width=width)
 
