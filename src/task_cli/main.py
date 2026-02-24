@@ -1,7 +1,8 @@
 from platformdirs import  user_data_dir
 from pathlib import Path
 from task_cli.domain.task_manager import TaskManager
-from task_cli.repository.task_repository import JSONTaskRepository, ITaskRepository
+from task_cli.repository.task_repository import ITaskRepository, JSONStorage, IBulkStorage, \
+    BulkRepository
 from task_cli.ui.command_interface import CommandInterface
 
 def generate_path_dir(app_name: str = "task_cli") -> Path:
@@ -13,8 +14,8 @@ def main():
 
     path_dir = generate_path_dir()
     json_path = path_dir / "task.json"
-    repo: ITaskRepository = JSONTaskRepository(json_path)
-
+    storage: IBulkStorage = JSONStorage(json_path)
+    repo: ITaskRepository = BulkRepository(storage)
     task_manager = TaskManager(repo)
     cli_handler = CommandInterface(task_manager)
     cli_handler.run()
