@@ -38,6 +38,7 @@ class TableStyle:
             self.t_bot = self.intersection
             self.t_left = self.intersection
             self.t_right = self.intersection
+            self.error = "!"
 
         else:  # UTF-8 box drawing
             self.cell_border = "║"
@@ -52,6 +53,7 @@ class TableStyle:
             self.t_bot = "╩"
             self.t_left = "╠"
             self.t_right = "╣"
+            self.error = "✖"
 
 class TaskCliFormatter:
 
@@ -229,3 +231,7 @@ class TaskCliFormatter:
         row3 = cls._render_two_col_row(left_bot, right_bot, col_width, style)
 
         return top + row1 + mid_top + row2 + mid_bot + row3 + bot
+    @staticmethod
+    def format_error(error: str, style: TableStyle) -> str:
+        retry_message = "Dont worry, try a new one!"
+        return f"[{style.error}] ups:" + error + f"\n - {retry_message}"
