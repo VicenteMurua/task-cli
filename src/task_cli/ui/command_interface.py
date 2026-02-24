@@ -1,65 +1,77 @@
+from task_cli.domain.exceptions import IlegalTaskDescriptionError, TaskNotFoundError
 from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
 import sys
 import argparse
 
+def show_error(e: Exception, style: TableStyle) -> None:
+    print(
+        TaskCliFormatter.format_client_error(str(e), style)
+    )
 
 class CommandInterface:
     _manager: TaskManager
 
-    def __init__(self, manager: TaskManager, ascii: bool = False) -> None:
+    def __init__(self, manager: TaskManager, style: bool = False) -> None:
         self._manager = manager
         self._parser = argparse.ArgumentParser(prog="task-cli")
         self._setup_all_commands()
-        self.ascii = ascii
+        self.style = style
 
     def run(self) -> None:
         args = self._parser.parse_args(sys.argv[1:])
-        args.func(args)
+        try:
+            args.func(args)
+        except IlegalTaskDescriptionError as e:
+            show_error(e, TableStyle(self.style))
+        except TaskNotFoundError as e:
+            show_error(e, TableStyle(self.style))
+        except Exception as e:
+            print(f"FATAL: Ocurrió un error inesperado. {type(e).__name__}: {e}")
 
     @staticmethod
-    def show_feedback(task: TaskDTO, ascii: bool=False) -> None:
+    def show_feedback(task: TaskDTO, style: bool=False) -> None:
         print("\nYou interacted with this task.")
-        print(TaskCliFormatter.format_task_detail(task, TableStyle(ascii)))
+        print(TaskCliFormatter.format_task_detail(task, TableStyle(style)))
 
     @staticmethod
-    def quick_show_feedback(task: TaskDTO, ascii: bool=False) -> None:
+    def quick_show_feedback(task: TaskDTO, style: bool=False) -> None:
         print("\nYou interacted with this task.")
-        print(TaskCliFormatter.format_task_table(task, TableStyle(ascii)))
+        print(TaskCliFormatter.format_task_table(task, TableStyle(style)))
 
     @staticmethod
-    def quick_show_list(tasks: list[TaskDTO], ascii: bool=False) -> None:
+    def quick_show_list(tasks: list[TaskDTO], style: bool=False) -> None:
         print("\nYou interacted with list.")
-        print(TaskCliFormatter.format_tasks_table(tasks, TableStyle(ascii)))
+        print(TaskCliFormatter.format_tasks_table(tasks, TableStyle(style)))
 
     def _cmd_add(self, args: argparse.Namespace) -> None:
         task:TaskDTO = self._manager.add(args.description)
-        self.show_feedback(task, self.ascii)
+        self.show_feedback(task, self.style)
         print("You added a new task.")
 
     def _cmd_update(self, args: argparse.Namespace) -> None:
         task: TaskDTO = self._manager.update(args.task_id, args.description)
-        self.show_feedback(task, self.ascii)
+        self.show_feedback(task, self.style)
         print("You updated this task.")
 
     def _cmd_delete(self, args: argparse.Namespace) -> None:
         task: TaskDTO = self._manager.delete(args.task_id)
-        self.show_feedback(task, self.ascii)
+        self.show_feedback(task, self.style)
         print("You deleted this task.")
 
     def _cmd_read(self, args: argparse.Namespace) -> None:
         task: TaskDTO = self._manager.read(args.task_id)
         if args.detail:
-            self.show_feedback(task, self.ascii)
+            self.show_feedback(task, self.style)
             print("You readed this task.")
         else:
-            self.quick_show_feedback(task, self.ascii)
+            self.quick_show_feedback(task, self.style)
             print("You readed this task.")
 
     def _cmd_mark(self, args: argparse.Namespace) -> None:
         task: TaskDTO = self._manager.mark(args.status, args.task_id)
-        self.show_feedback(task, self.ascii)
+        self.show_feedback(task, self.style)
         print("You marked this task.")
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
@@ -70,7 +82,7 @@ class CommandInterface:
                 "You can add a new task with 'add' or change the filter to see other tasks."
             )
             return
-        self.quick_show_list(task_list, self.ascii)
+        self.quick_show_list(task_list, self.style)
 
     def _setup_all_commands(self):
         command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)

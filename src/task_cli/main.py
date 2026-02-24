@@ -4,13 +4,14 @@ from task_cli.domain.task_manager import TaskManager
 from task_cli.repository.task_repository import JSONTaskRepository, ITaskRepository
 from task_cli.ui.command_interface import CommandInterface
 
+def generate_path_dir(app_name: str = "task_cli") -> Path:
+    path_dir = Path(user_data_dir(app_name))
+    path_dir.mkdir(parents=True, exist_ok=True)
+    return path_dir
 
 def main():
 
-    app_name = "task_cli"
-    data_dir = user_data_dir(app_name)
-    path_dir = Path(data_dir)
-    path_dir.mkdir(parents=True, exist_ok=True)
+    path_dir = generate_path_dir()
     json_path = path_dir / "task.json"
     repo: ITaskRepository = JSONTaskRepository(json_path)
 
