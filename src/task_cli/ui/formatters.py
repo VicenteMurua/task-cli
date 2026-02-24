@@ -232,6 +232,6 @@ class TaskCliFormatter:
 
         return top + row1 + mid_top + row2 + mid_bot + row3 + bot
     @staticmethod
-    def format_error(error: str, style: TableStyle) -> str:
+    def format_client_error(error: str, style: TableStyle) -> str:
         retry_message = "Dont worry, try a new one!"
         return f"[{style.error}] ups:" + error + f"\n - {retry_message}"
