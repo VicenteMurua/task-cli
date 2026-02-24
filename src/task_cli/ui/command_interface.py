@@ -1,32 +1,78 @@
+from task_cli.domain.exceptions import IlegalTaskDescriptionError, TaskNotFoundError
+from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
 import sys
 import argparse
 
+def show_error(e: Exception, style: TableStyle) -> None:
+    print(
+        TaskCliFormatter.format_client_error(str(e), style)
+    )
 
 class CommandInterface:
     _manager: TaskManager
 
-    def __init__(self, manager: TaskManager):
+    def __init__(self, manager: TaskManager, style: bool = False) -> None:
         self._manager = manager
         self._parser = argparse.ArgumentParser(prog="task-cli")
         self._setup_all_commands()
+        self.style = style
 
     def run(self) -> None:
         args = self._parser.parse_args(sys.argv[1:])
-        args.func(args)
+        try:
+            args.func(args)
+        except IlegalTaskDescriptionError as e:
+            show_error(e, TableStyle(self.style))
+        except TaskNotFoundError as e:
+            show_error(e, TableStyle(self.style))
+        except Exception as e:
+            print(f"FATAL: Ocurrió un error inesperado. {type(e).__name__}: {e}")
+
+    @staticmethod
+    def show_feedback(task: TaskDTO, style: bool=False) -> None:
+        print("\nYou interacted with this task.")
+        print(TaskCliFormatter.format_task_detail(task, TableStyle(style)))
+
+    @staticmethod
+    def quick_show_feedback(task: TaskDTO, style: bool=False) -> None:
+        print("\nYou interacted with this task.")
+        print(TaskCliFormatter.format_task_table(task, TableStyle(style)))
+
+    @staticmethod
+    def quick_show_list(tasks: list[TaskDTO], style: bool=False) -> None:
+        print("\nYou interacted with list.")
+        print(TaskCliFormatter.format_tasks_table(tasks, TableStyle(style)))
 
     def _cmd_add(self, args: argparse.Namespace) -> None:
-        self._manager.add(args.description)
+        task:TaskDTO = self._manager.add(args.description)
+        self.show_feedback(task, self.style)
+        print("You added a new task.")
 
     def _cmd_update(self, args: argparse.Namespace) -> None:
-        self._manager.update(args.task_id, args.description)
+        task: TaskDTO = self._manager.update(args.task_id, args.description)
+        self.show_feedback(task, self.style)
+        print("You updated this task.")
 
     def _cmd_delete(self, args: argparse.Namespace) -> None:
-        self._manager.delete(args.task_id)
+        task: TaskDTO = self._manager.delete(args.task_id)
+        self.show_feedback(task, self.style)
+        print("You deleted this task.")
+
+    def _cmd_read(self, args: argparse.Namespace) -> None:
+        task: TaskDTO = self._manager.read(args.task_id)
+        if args.detail:
+            self.show_feedback(task, self.style)
+            print("You readed this task.")
+        else:
+            self.quick_show_feedback(task, self.style)
+            print("You readed this task.")
 
     def _cmd_mark(self, args: argparse.Namespace) -> None:
-        self._manager.mark(args.status, args.task_id)
+        task: TaskDTO = self._manager.mark(args.status, args.task_id)
+        self.show_feedback(task, self.style)
+        print("You marked this task.")
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
         task_list: list[TaskDTO] = self._manager.filter_tasks(args.filter)
@@ -36,8 +82,7 @@ class CommandInterface:
                 "You can add a new task with 'add' or change the filter to see other tasks."
             )
             return
-        for dto in task_list:
-            print(dto)
+        self.quick_show_list(task_list, self.style)
 
     def _setup_all_commands(self):
         command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)
@@ -47,6 +92,7 @@ class CommandInterface:
         self._setup_mark_done_command(command_registry)
         self._setup_mark_in_progress_command(command_registry)
         self._setup_list_command(command_registry)
+        self._setup_read_command(command_registry)
 
     def _setup_add_command(self, command_registry: argparse._SubParsersAction):
         parser_add = command_registry.add_parser(
@@ -86,6 +132,24 @@ class CommandInterface:
             help = "ID of the task to be deleted"
         )
         parser_delete.set_defaults(func = self._cmd_delete)
+
+    def _setup_read_command(self, command_registry: argparse._SubParsersAction):
+        parser_read = command_registry.add_parser(
+            "read",
+            help = "Read a task from the list"
+        )
+        parser_read.add_argument(
+            "task_id",
+            type = int,
+            help = "ID of the task to be readd"
+        )
+        parser_read.add_argument(
+            "-d",
+            "--detail",
+            action="store_true",
+            help="Show detailed view"
+        )
+        parser_read.set_defaults(func = self._cmd_read)
 
     def _setup_mark_done_command(self, command_registry: argparse._SubParsersAction):
         parser_mark_done = command_registry.add_parser(

@@ -9,3 +9,6 @@ class TaskNotFoundError(TaskException, KeyError):
 
 class TaskAlreadyExistsError(TaskException, ValueError):
     pass
+
+class IlegalTaskDescriptionError(TaskException):
+    pass
