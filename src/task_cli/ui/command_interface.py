@@ -64,10 +64,10 @@ class CommandInterface:
         task: TaskDTO = self._manager.read(args.task_id)
         if args.detail:
             self.show_feedback(task, self.style)
-            print("You readed this task.")
+            print("You read this task.")
         else:
             self.quick_show_feedback(task, self.style)
-            print("You readed this task.")
+            print("You read this task.")
 
     def _cmd_mark(self, args: argparse.Namespace) -> None:
         task: TaskDTO = self._manager.mark(args.status, args.task_id)
