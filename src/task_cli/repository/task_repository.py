@@ -4,7 +4,7 @@ from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.exceptions import TaskNotFoundError, TaskAlreadyExistsError
 from task_cli.domain.task import TaskStatus
 from task_cli.repository.mappers import TaskMapper
-
+import csv
 import json
 
 class ITaskRepository(ABC):
@@ -53,10 +53,9 @@ class JSONTaskRepository(ITaskRepository):
         return tasks_by_id
 
     def _save_raw_data(self, tasks_by_id: dict[int, dict]) -> None:
-        task_json_format: list[dict] = list(tasks_by_id.values())
-
         with open(self.path, 'w', encoding='utf-8') as file:
-            json.dump(task_json_format, file, ensure_ascii=False, indent=4)
+            json.dump(tasks_by_id.values(), file, ensure_ascii=False, indent=4)
+
     def get_max_id(self) -> int:
         tasks_by_id = self._load_raw_data()
         return max(tasks_by_id.keys(), default=0)
@@ -115,3 +114,51 @@ class JSONTaskRepository(ITaskRepository):
             for task in tasks_by_id.values()
             if task["status"] == status_filter.value
         ]
+
+class CSVTaskRepository(ITaskRepository):
+    _HEADER = ["task_id", "status", "description", "created_at", "updated_at"]
+    def __init__(self, path: Path) -> None:
+        self.path: Path = path
+
+    def _ensure_file(self) -> None:
+        if not self.path.exists():
+            with open(self.path, 'w', newline='', encoding='utf-8') as file:
+                writer = csv.DictWriter(file, fieldnames=self._HEADER)
+                writer.writeheader()
+
+    def _load_raw_data(self) -> dict[int, dict]:
+        self._ensure_file()
+        tasks_by_id: dict[int, dict] = {}
+
+        with open(self.path, 'r', encoding='utf-8') as file:
+            raw_tasks= csv.DictReader(file)
+            # Aca no es como el json porque el json carga los datos mientras que el csv itera mientras lee
+            for task_entry in raw_tasks:
+                tasks_by_id[int(task_entry["task_id"])] = task_entry
+
+        return tasks_by_id
+
+    def _save_raw_data(self, tasks_by_id: dict[int, dict]) -> None:
+        with open(self.path, 'w', newline='', encoding='utf-8') as file:
+            writer = csv.DictWriter(file, fieldnames=self._HEADER)
+            writer.writeheader()
+            for task_entry in tasks_by_id.values():
+                writer.writerow(task_entry)
+
+    def get_max_id(self) -> int:
+        pass
+
+    def add(self, new_data: TaskDTO) -> None:
+        pass
+
+    def update(self, updated_data: TaskDTO) -> None:
+        pass
+
+    def delete(self, id_to_delete: int) -> None:
+        pass
+
+    def read(self, id_to_read: int) -> TaskDTO:
+        pass
+
+    def filter_by_status(self, status_filter: TaskStatus|None = None) -> list[TaskDTO]:
+        pass
