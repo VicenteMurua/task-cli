@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
-from task_cli.domain.exceptions import TaskValidationError
+from task_cli.domain.exceptions import TaskValidationError, IlegalTaskDescriptionError
+
 time_zone = timezone.utc
 
 
@@ -81,7 +82,7 @@ class Task:
         if type(new_description) is not str:
             raise TypeError("Description must be a string")
         if not new_description.strip():
-            raise TaskValidationError("Description cannot be empty")
+            raise IlegalTaskDescriptionError("Description cannot be empty")
 
     @staticmethod
     def _validate_id(new_id: int) -> None:
