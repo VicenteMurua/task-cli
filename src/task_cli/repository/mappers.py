@@ -37,9 +37,9 @@ class TaskMapper:
     @staticmethod #TODO: Generar un typedict
     def from_dict(data: dict) -> TaskDTO:
         return TaskDTO(
-            task_id=data["task_id"],
-            description=data["description"],
-            status=data["status"],
-            created_at=data["created_at"],
-            updated_at=data["updated_at"],
+            task_id=int(data["task_id"]),
+            description=str(data["description"]),
+            status=str(data["status"]),
+            created_at=str(data["created_at"]),
+            updated_at=str(data["updated_at"]),
         )
