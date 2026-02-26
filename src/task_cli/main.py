@@ -5,7 +5,7 @@ from task_cli.ui.command_interface import CommandInterface
 
 
 def main():
-    repo: ITaskRepository = make_task_repository("sqlite")
+    repo: ITaskRepository = make_task_repository()
     task_manager = TaskManager(repo)
     cli_handler = CommandInterface(task_manager)
     cli_handler.run()
