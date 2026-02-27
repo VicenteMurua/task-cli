@@ -78,6 +78,6 @@ class TestRepository:
         manager.mark("done", 3)
         manager.mark("todo", 3)
 
-        assert manager.filter_tasks("done")[0] == manager._repository.read(2)
-        assert manager.filter_tasks("in-progress")[0] == manager._repository.read(1)
-        assert manager.filter_tasks("todo")[0] == manager._repository.read(3)
+        assert manager.filter_by_status("done")[0] == manager._repository.read(2)
+        assert manager.filter_by_status("in-progress")[0] == manager._repository.read(1)
+        assert manager.filter_by_status("todo")[0] == manager._repository.read(3)

@@ -28,13 +28,13 @@ class TaskMapper:
     @staticmethod
     def to_dict(task_dto: TaskDTO) -> dict:
         return {
+            "task_id": task_dto.task_id,
             "description": task_dto.description,
             "status": task_dto.status,
-            "task_id": task_dto.task_id,
             "created_at": task_dto.created_at,
             "updated_at": task_dto.updated_at,
         }
-    @staticmethod #TODO: Generar un typedict
+    @staticmethod
     def from_dict(data: dict) -> TaskDTO:
         return TaskDTO(
             task_id=int(data["task_id"]),

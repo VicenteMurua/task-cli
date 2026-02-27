@@ -88,7 +88,7 @@ class CommandInterface:
         print("You marked this task.")
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
-        task_list: list[TaskDTO] = self._manager.filter_tasks(args.filter)
+        task_list: list[TaskDTO] = self._manager.filter_by_status(args.filter)
         if not task_list:
             print(
                 "No tasks are scheduled under this filter. "

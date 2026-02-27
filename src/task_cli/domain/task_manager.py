@@ -11,7 +11,7 @@ class TaskManager:
     def add(self, description: str) -> TaskDTO:
         with self._repository as repo:
             new_id: int = repo.get_max_id() + 1
-            new_task: Task = Task(
+            new_task = Task(
                 description=description,
                 task_id=new_id,
                 status=TaskStatus.TODO
@@ -49,7 +49,7 @@ class TaskManager:
             repo.update(updated_target_dto)
             return updated_target_dto
 
-    def filter_tasks(self, status_filter: str | None) -> list[TaskDTO]:
+    def filter_by_status(self, status_filter: str | None) -> list[TaskDTO]:
         with self._repository as repo:
             if status_filter is None:
                 return repo.filter_by_status(None)
