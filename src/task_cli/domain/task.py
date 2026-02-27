@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from functools import wraps
 from enum import Enum
-from task_cli.domain.exceptions import TaskValidationError, IlegalTaskDescriptionError
+from task_cli.domain.exceptions import TaskValidationError, IllegalTaskDescriptionError
 
 time_zone = timezone.utc
 
@@ -11,7 +11,7 @@ class TaskStatus(Enum):
     IN_PROGRESS = "in-progress"
     DONE = "done"
 
-def update_time_stamp(func):
+def update_timestamp(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         resultado = func(self, *args, **kwargs)
@@ -79,10 +79,10 @@ class Task:
 
     @staticmethod
     def _validate_description(new_description: str) -> None:
-        if type(new_description) is not str:
+        if not isinstance(new_description, str):
             raise TypeError("Description must be a string")
         if not new_description.strip():
-            raise IlegalTaskDescriptionError("Description cannot be empty")
+            raise IllegalTaskDescriptionError()
 
     @staticmethod
     def _validate_id(new_id: int) -> None:
@@ -121,12 +121,12 @@ class Task:
     def _refresh_updated_at(self):
         self._updated_at = datetime.now(time_zone)
 
-    @update_time_stamp
+    @update_timestamp
     def update_description(self, new_description: str) -> None:
         self._validate_description(new_description)
         self._set_description(new_description)
 
-    @update_time_stamp
+    @update_timestamp
     def update_status(self, status: TaskStatus) -> None:
         self._validate_status(status)
         self._set_status(status)

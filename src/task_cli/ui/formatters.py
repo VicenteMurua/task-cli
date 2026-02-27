@@ -1,9 +1,13 @@
 from datetime import datetime
 from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.task import TaskStatus
+from task_cli.ui.messages.error_messages import (
+    ERROR_CATALOG, RETRY_MESSAGES
+)
+
 import textwrap
 import re
-from colorama import init, Fore, Back, Style
+from colorama import init, Fore, Style
 init(autoreset=True)
 
 
@@ -231,7 +235,26 @@ class TaskCliFormatter:
         row3 = cls._render_two_col_row(left_bot, right_bot, col_width, style)
 
         return top + row1 + mid_top + row2 + mid_bot + row3 + bot
+
     @staticmethod
-    def format_client_error(error: str, style: TableStyle) -> str:
-        retry_message = "Dont worry, try a new one!"
-        return f"[{style.error}] ups:" + error + f"\n - {retry_message}"
+    def format_client_error(exc, style, lang="es"):
+        # 1. Buscamos el catálogo del idioma
+        lang_dict = ERROR_CATALOG.get(lang, ERROR_CATALOG["en"])
+
+        # 2. Obtenemos la función que genera el texto del error
+        # Usamos type(exc) para saber cuál error es
+        message_func = lang_dict.get(type(exc))
+
+        if message_func:
+            # 3. EJECUTAMOS la función. Como es un f-string, devuelve el texto directo.
+            error_msg = message_func(exc)
+        else:
+            error_msg = str(exc)
+
+        retry_msg = RETRY_MESSAGES.get(lang, RETRY_MESSAGES["en"])
+
+        # Devolvemos el string final con colores
+        return (
+            f"{Fore.RED}[{style.error}] Error: {error_msg}{Style.RESET_ALL}\n"
+            f"{Fore.CYAN} - {retry_msg}{Style.RESET_ALL}"
+        )

@@ -22,7 +22,9 @@ class TaskIDError(TaskValidationError):
 class TaskNotFoundError(TaskException, KeyError):
     """Se lanza cuando se intenta operar sobre un ID que no existe en el repositorio."""
     # Hereda de KeyError por compatibilidad semántica con búsquedas en diccionarios/almacenes.
-    pass
+    def __init__(self, task_id: int):
+        self.task_id = task_id
+        super().__init__(f"Task not found: {task_id}")
 
 class TaskAlreadyExistsError(TaskException, ValueError):
     """Se lanza al intentar crear una tarea con un ID que ya está en uso."""
@@ -34,4 +36,7 @@ class TaskRelationError(TaskException, RuntimeError):
     """Error de integridad: inconsistencia entre estados o fechas del objeto."""
     # Hereda de RuntimeError porque no es un error de input del usuario,
     # sino un fallo en el estado de ejecución o consistencia interna.
+    pass
+
+class UnknownTaskError(TaskException, RuntimeError):
     pass

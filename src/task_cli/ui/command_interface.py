@@ -1,14 +1,17 @@
-from task_cli.domain.exceptions import IlegalTaskDescriptionError, TaskNotFoundError
+from colorama import Fore, Style
+from task_cli.domain.exceptions import TaskException, TaskValidationError, TaskNotFoundError
 from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
 import sys
 import argparse
 
-def show_error(e: Exception, style: TableStyle) -> None:
-    print(
-        TaskCliFormatter.format_client_error(str(e), style)
-    )
+def show_error(exc: TaskException, style: TableStyle, lang: str = "en") -> None:
+    """
+    Muestra en consola un error de Task usando TaskCliFormatter.
+    Usa ERROR_CATALOG y RETRY_MESSAGES para multilenguaje.
+    """
+    print(TaskCliFormatter.format_client_error(exc, style, lang=lang))
 
 class CommandInterface:
     _manager: TaskManager
@@ -18,18 +21,28 @@ class CommandInterface:
         self._parser = argparse.ArgumentParser(prog="task-cli")
         self._setup_all_commands()
         self.style = style
+        self.lang = "es"
 
     def run(self) -> None:
         args = self._parser.parse_args(sys.argv[1:])
+
         try:
             args.func(args)
-        except IlegalTaskDescriptionError as e:
-            show_error(e, TableStyle(self.style))
-        except TaskNotFoundError as e:
-            show_error(e, TableStyle(self.style))
-        except Exception as e:
-            print(f"FATAL: Ocurrió un error inesperado. {type(e).__name__}: {e}")
 
+        # 1. Errores que el usuario PUEDE arreglar (Validación y Búsqueda)
+        except (TaskValidationError, TaskNotFoundError) as exc:
+            style = TableStyle(self.style)
+            show_error(exc, style, lang=self.lang)
+
+        # 2. Errores que el programador DEBE arreglar (Bugs de lógica)
+        except TaskException as exc:
+            # Aquí no usamos "show_error" porque no queremos el mensaje de "reintenta"
+            print(f"{Fore.RED}[SISTEMA] Error de lógica interna: {type(exc).__name__}")
+            print(f"Detalle técnico: {exc}{Style.RESET_ALL}")
+
+        # 3. Errores catastróficos (Se cortó la luz, no hay disco, etc.)
+        except Exception as e:
+            print(f"{Fore.RED}FATAL: Ocurrió un error inesperado. {type(e).__name__}: {e}{Style.RESET_ALL}")
     @staticmethod
     def show_feedback(task: TaskDTO, style: bool=False) -> None:
         print("\nYou interacted with this task.")

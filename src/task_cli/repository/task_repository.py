@@ -166,7 +166,7 @@ class FileTaskRepository(IBulkRepository):
         tasks_by_id = self.tasks_by_id
 
         if updated_data.task_id not in tasks_by_id:
-            raise TaskNotFoundError(f"Task with id {updated_data.task_id} not found, cant update")
+            raise TaskNotFoundError(updated_data.task_id)
 
         tasks_by_id[updated_data.task_id] = TaskMapper.to_dict(updated_data)
 
@@ -175,7 +175,7 @@ class FileTaskRepository(IBulkRepository):
         tasks_by_id = self.tasks_by_id
 
         if id_to_delete not in tasks_by_id:
-            raise TaskNotFoundError(f"Task with id {id_to_delete} not found, cant delete")
+            raise TaskNotFoundError(id_to_delete)
 
         del tasks_by_id[id_to_delete]
 
@@ -184,7 +184,7 @@ class FileTaskRepository(IBulkRepository):
         tasks_by_id = self.tasks_by_id
 
         if id_to_read not in tasks_by_id:
-            raise TaskNotFoundError(f"Task with id {id_to_read} not found, cant read")
+            raise TaskNotFoundError(id_to_read)
 
         return TaskMapper.from_dict(tasks_by_id[id_to_read])
 
@@ -268,7 +268,7 @@ class SQLiteTaskRepository(IDirectAccessRepository):
         """
         record = TaskMapper.to_dict(new_data)
         try:
-            cursor = self.conn.execute(query, record)
+            self.conn.execute(query, record)
         except sqlite3.IntegrityError as e:
             if "UNIQUE constraint failed: tasks.task_id" in str(e):
                 raise TaskAlreadyExistsError(
@@ -286,9 +286,7 @@ class SQLiteTaskRepository(IDirectAccessRepository):
         record: dict = TaskMapper.to_dict(updated_data)
         cursor = self.conn.execute(query, record)
         if cursor.rowcount == 0:
-            raise TaskNotFoundError(
-                f"Task with id {updated_data.task_id} not found, cant update"
-            )
+            raise TaskNotFoundError(updated_data.task_id)
 
     @ensure_active
     def delete(self, id_to_delete: int) -> None:
@@ -298,9 +296,7 @@ class SQLiteTaskRepository(IDirectAccessRepository):
         """
         cursor = self.conn.execute(query, {"task_id": id_to_delete})
         if cursor.rowcount == 0:
-            raise TaskNotFoundError(
-                f"Task with id {id_to_delete} not found, cant delete"
-            )
+            raise TaskNotFoundError(id_to_delete)
 
     @ensure_active
     def read(self, id_to_read: int) -> TaskDTO:
@@ -312,9 +308,7 @@ class SQLiteTaskRepository(IDirectAccessRepository):
         cursor = self.conn.execute(query, {"task_id": id_to_read})
         row = cursor.fetchone()
         if row is None:
-            raise TaskNotFoundError(
-                f"Task with id {id_to_read} not found, cant read"
-            )
+            raise TaskNotFoundError(id_to_read)
         return TaskMapper.from_dict(dict(row))
 
 
