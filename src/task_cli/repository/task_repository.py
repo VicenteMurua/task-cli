@@ -98,7 +98,7 @@ class CSVBulkStorage(IBulkStorage):
         if not self.path.exists():
             # es un requerimiento de csv utilizar el parametro newline en ''
             with open(self.path, 'w', newline='', encoding='utf-8') as file:
-                writer = csv.DictWriter(file, fieldnames=self._HEADER)
+                writer = csv.DictWriter(file, fieldnames=self._HEADER, delimiter=';')
                 writer.writeheader()
 
     def load(self) -> dict[int, dict]:
@@ -106,7 +106,7 @@ class CSVBulkStorage(IBulkStorage):
         tasks_by_id: dict[int, dict] = {}
 
         with open(self.path, 'r', encoding='utf-8') as file:
-            raw_tasks= csv.DictReader(file)
+            raw_tasks= csv.DictReader(file, delimiter=';')
             # Aca no es como el json porque el json carga los datos mientras que el csv itera mientras lee
             for task_entry in raw_tasks:
                 tasks_by_id[int(task_entry["task_id"])] = task_entry
@@ -115,10 +115,13 @@ class CSVBulkStorage(IBulkStorage):
 
     def save(self, tasks_by_id: dict[int, dict]) -> None:
         with open(self.path, 'w', newline='', encoding='utf-8') as file:
-            writer = csv.DictWriter(file, fieldnames=self._HEADER)
+            writer = csv.DictWriter(file, fieldnames=self._HEADER, delimiter=';')
             writer.writeheader()
             for task_entry in tasks_by_id.values():
-                writer.writerow(task_entry)
+                row: dict[str, str] = {}
+                for key, value in task_entry.items():
+                    row[key] = str(value) # cuidamos integridad del csv
+                writer.writerow(row)
 
 
 class IBulkRepository(ITaskRepository, ABC):
