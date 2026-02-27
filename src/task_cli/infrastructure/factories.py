@@ -2,13 +2,13 @@ from enum import Enum
 from pathlib import Path
 from platformdirs import user_data_dir
 from task_cli.repository.task_repository import (
-    FileTaskRepository, JSONBulkStorage, CSVBulkStorage, SQLiteTaskRepository, ITaskRepository
+    FileRepository, JSONStorage, CSVStorage, SQLiteRepository, IRepository
 )
 
 repo_factories = {
-    "json": lambda path: FileTaskRepository(JSONBulkStorage(path)),
-    "csv": lambda path: FileTaskRepository(CSVBulkStorage(path)),
-    "sqlite": lambda path: SQLiteTaskRepository(path),
+    "json": lambda path: FileRepository(JSONStorage(path)),
+    "csv": lambda path: FileRepository(CSVStorage(path)),
+    "sqlite": lambda path: SQLiteRepository(path),
 }
 
 file_ext = {
@@ -22,7 +22,7 @@ class RepoType(str, Enum):
     CSV = "csv"
     SQLite = "sqlite"
 
-def make_task_repository(repo_type: RepoType = RepoType.SQLite) -> ITaskRepository:
+def make_task_repository(repo_type: RepoType = RepoType.SQLite) -> IRepository:
     path_dir = Path(user_data_dir("task_cli"))
     path_dir.mkdir(parents=True, exist_ok=True)
 

@@ -17,7 +17,7 @@ def ensure_active(method):
         return method(self, *args, **kwargs)
     return wrapper
 
-class IBulkStorage(ABC):
+class IStorage(ABC):
     @abstractmethod
     def load(self) -> dict[int, dict]:
         pass
@@ -25,7 +25,7 @@ class IBulkStorage(ABC):
     def save(self, tasks_by_id: dict[int, dict]) -> None:
         pass
 
-class ITaskRepository(ABC):
+class IRepository(ABC):
     @abstractmethod
     def __enter__(self):
         pass
@@ -63,7 +63,7 @@ class ITaskRepository(ABC):
         pass
 
 
-class JSONBulkStorage(IBulkStorage):
+class JSONStorage(IStorage):
     def __init__(self, path: Path) -> None:
         self.path: Path = path
 
@@ -89,7 +89,7 @@ class JSONBulkStorage(IBulkStorage):
         with open(self.path, 'w', encoding='utf-8') as file:
             json.dump(task_json_format, file, ensure_ascii=False, indent=4)
 
-class CSVBulkStorage(IBulkStorage):
+class CSVStorage(IStorage):
     _HEADER = ["task_id", "status", "description", "created_at", "updated_at"]
     def __init__(self, path: Path) -> None:
         self.path: Path = path
@@ -124,11 +124,11 @@ class CSVBulkStorage(IBulkStorage):
                 writer.writerow(row)
 
 
-class IBulkRepository(ITaskRepository, ABC):
+class IBulkRepository(IRepository, ABC):
     pass
 
-class FileTaskRepository(IBulkRepository):
-    def __init__(self, storage: IBulkStorage) -> None:
+class FileRepository(IBulkRepository):
+    def __init__(self, storage: IStorage) -> None:
         self.storage = storage
         self.tasks_by_id = None
 
@@ -157,7 +157,7 @@ class FileTaskRepository(IBulkRepository):
         tasks_by_id = self.tasks_by_id
 
         if new_data.task_id in tasks_by_id:
-            raise TaskAlreadyExistsError(f"Task with id {new_data.task_id} already exists")
+            raise TaskAlreadyExistsError(new_data.task_id)
 
         tasks_by_id[new_data.task_id] = TaskMapper.to_dict(new_data)
 
@@ -208,10 +208,10 @@ class FileTaskRepository(IBulkRepository):
         ]
 
 
-class IDirectAccessRepository(ITaskRepository, ABC):
+class IDirectAccessRepository(IRepository, ABC):
     pass
 
-class SQLiteTaskRepository(IDirectAccessRepository):
+class SQLiteRepository(IDirectAccessRepository):
     def __init__(self, db_path: Path):
         self.path: Path = db_path
         self.conn = None
@@ -271,9 +271,7 @@ class SQLiteTaskRepository(IDirectAccessRepository):
             self.conn.execute(query, record)
         except sqlite3.IntegrityError as e:
             if "UNIQUE constraint failed: tasks.task_id" in str(e):
-                raise TaskAlreadyExistsError(
-                    f"Task with id {new_data.task_id} already exists"
-                )
+                raise TaskAlreadyExistsError(new_data.task_id)
             raise
 
     @ensure_active

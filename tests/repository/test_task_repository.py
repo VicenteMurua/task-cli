@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from task_cli.domain.exceptions import TaskAlreadyExistsError, TaskNotFoundError
 from task_cli.repository.mappers import TaskMapper
-from task_cli.repository.task_repository import FileTaskRepository, JSONBulkStorage
+from task_cli.repository.task_repository import FileRepository, JSONStorage
 from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.task import TaskStatus
 import pytest
@@ -15,14 +15,14 @@ class TestJSONTaskRepository:
         return tmp_path / "test_add.json"
 
     @pytest.fixture
-    def repo(self, json_path: Path) -> FileTaskRepository:
-        return FileTaskRepository(JSONBulkStorage(json_path))
+    def repo(self, json_path: Path) -> FileRepository:
+        return FileRepository(JSONStorage(json_path))
 
     @pytest.mark.parametrize(
         "task_dto",
         fake_dto_list_no_duplicates
     )
-    def test_add_1(self, task_dto: TaskDTO, json_path: Path, repo: FileTaskRepository):
+    def test_add_1(self, task_dto: TaskDTO, json_path: Path, repo: FileRepository):
         repo.add(task_dto)
         task_dict: dict = TaskMapper.to_dict(task_dto)
         with open(json_path, 'r', encoding='utf-8') as file:
@@ -30,7 +30,7 @@ class TestJSONTaskRepository:
             assert 1 == len(data_list)
             assert  task_dict in data_list
 
-    def test_add_n(self, json_path: Path, repo: FileTaskRepository):
+    def test_add_n(self, json_path: Path, repo: FileRepository):
         for task_dto in fake_dto_list_no_duplicates:
             repo.add(task_dto)
 
@@ -39,13 +39,13 @@ class TestJSONTaskRepository:
             assert len(fake_dto_list_no_duplicates) == len(data_list)
             assert all(TaskMapper.to_dict(task_dto) in data_list for task_dto in fake_dto_list_no_duplicates)
 
-    def test_add_duplicate(self, repo: FileTaskRepository):
+    def test_add_duplicate(self, repo: FileRepository):
         repo.add(fake_todo_1_dto)
         with pytest.raises(TaskAlreadyExistsError):
             repo.add(fake_todo_1_dto)
 
 
-    def test_update(self, json_path: Path, repo: FileTaskRepository):
+    def test_update(self, json_path: Path, repo: FileRepository):
         repo.add(fake_todo_1_dto)
         repo.update(modified_dto_1_dto)
         with open(json_path, 'r', encoding='utf-8') as file:
@@ -53,33 +53,33 @@ class TestJSONTaskRepository:
             assert 1 == len(data_list)
             assert data_list[0] == TaskMapper.to_dict(modified_dto_1_dto)
 
-    def test_update_bad_index(self, repo: FileTaskRepository):
+    def test_update_bad_index(self, repo: FileRepository):
         with pytest.raises(TaskNotFoundError):
             repo.update(fake_todo_1_dto)
 
 
-    def test_delete(self, json_path: Path, repo: FileTaskRepository):
+    def test_delete(self, json_path: Path, repo: FileRepository):
         repo.add(fake_todo_1_dto)
         repo.delete(fake_todo_1_dto.task_id)
         with open(json_path, 'r', encoding='utf-8') as file:
             data_list: list[dict] = json.load(file)
             assert not len(data_list)
 
-    def test_delete_bad_index(self, repo: FileTaskRepository):
+    def test_delete_bad_index(self, repo: FileRepository):
         with pytest.raises(TaskNotFoundError):
             repo.delete(fake_todo_1_dto)
 
 
-    def test_read(self, json_path: Path, repo: FileTaskRepository):
+    def test_read(self, json_path: Path, repo: FileRepository):
         repo.add(fake_todo_1_dto)
         assert fake_todo_1_dto == repo.read(fake_todo_1_dto.task_id)
 
-    def test_read_bad_index(self, repo: FileTaskRepository):
+    def test_read_bad_index(self, repo: FileRepository):
         with pytest.raises(TaskNotFoundError):
             repo.read(fake_todo_1_dto.task_id)
 
 
-    def test_filter_by_status_none(self, repo: FileTaskRepository):
+    def test_filter_by_status_none(self, repo: FileRepository):
         for data in fake_dto_list_no_duplicates:
             repo.add(data)
         result = repo.filter_by_status(None)
@@ -94,12 +94,12 @@ class TestJSONTaskRepository:
             (TaskStatus.IN_PROGRESS, [fake_in_progress_1_dto]),
         ]
     )
-    def test_filter_by_status(self, repo: FileTaskRepository, status: TaskStatus, output: list[TaskDTO]):
+    def test_filter_by_status(self, repo: FileRepository, status: TaskStatus, output: list[TaskDTO]):
         for data in fake_dto_list_no_duplicates:
             repo.add(data)
         assert output == repo.filter_by_status(status)
 
-    def test_filter_by_wrong_status(self, repo: FileTaskRepository):
+    def test_filter_by_wrong_status(self, repo: FileRepository):
         with pytest.raises(ValueError):
             repo.filter_by_status("zapallo") #type: ignore[arg-type]
 

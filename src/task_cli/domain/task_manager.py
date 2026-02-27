@@ -1,12 +1,12 @@
 from task_cli.domain.task import Task, TaskStatus
 from task_cli.domain.dtos import TaskDTO
 from task_cli.repository.mappers import TaskMapper
-from task_cli.repository.task_repository import ITaskRepository
+from task_cli.repository.task_repository import IRepository
 
 
 class TaskManager:
-    def __init__(self, repository: ITaskRepository) -> None:
-        self._repository: ITaskRepository = repository
+    def __init__(self, repository: IRepository) -> None:
+        self._repository: IRepository = repository
 
     def add(self, description: str) -> TaskDTO:
         with self._repository as repo:

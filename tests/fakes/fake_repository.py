@@ -1,9 +1,9 @@
 from task_cli.domain.task import TaskStatus
-from task_cli.repository.task_repository import ITaskRepository
+from task_cli.repository.task_repository import IRepository
 from task_cli.domain.dtos import TaskDTO
 
 
-class FakeRepo(ITaskRepository):
+class FakeRepo(IRepository):
     def __init__(self):
         self.storage = {}
 
