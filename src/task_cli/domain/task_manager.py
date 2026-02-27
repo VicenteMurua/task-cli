@@ -16,16 +16,16 @@ class TaskManager:
                 task_id=new_id,
                 status=TaskStatus.TODO
             )
-            new_task_dto: TaskDTO = TaskMapper.to_task_dto(new_task)
+            new_task_dto: TaskDTO = TaskMapper.to_dto(new_task)
             repo.add(new_task_dto)
             return new_task_dto
 
     def update(self, task_id: int, new_description: str) -> TaskDTO:
         with self._repository as repo:
             target_dto: TaskDTO = repo.read(task_id)
-            target_task: Task = TaskMapper.from_task_dto(target_dto)
+            target_task: Task = TaskMapper.from_dto(target_dto)
             target_task.update_description(new_description)
-            updated_target_dto: TaskDTO = TaskMapper.to_task_dto(target_task)
+            updated_target_dto: TaskDTO = TaskMapper.to_dto(target_task)
             repo.update(updated_target_dto)
             return updated_target_dto
 
@@ -43,9 +43,9 @@ class TaskManager:
     def mark(self, status: str, task_id: int) -> TaskDTO:
         with self._repository as repo:
             target_dto: TaskDTO = repo.read(task_id)
-            target_task: Task = TaskMapper.from_task_dto(target_dto)
+            target_task: Task = TaskMapper.from_dto(target_dto)
             target_task.update_status(TaskStatus(status))
-            updated_target_dto: TaskDTO = TaskMapper.to_task_dto(target_task)
+            updated_target_dto: TaskDTO = TaskMapper.to_dto(target_task)
             repo.update(updated_target_dto)
             return updated_target_dto
 

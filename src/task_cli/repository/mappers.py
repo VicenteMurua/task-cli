@@ -5,7 +5,7 @@ from task_cli.domain.dtos import TaskDTO
 
 class TaskMapper:
     @staticmethod
-    def to_task_dto(task: Task) -> TaskDTO:
+    def to_dto(task: Task) -> TaskDTO:
         return TaskDTO(
             task_id = task.task_id,
             description = task.description,
@@ -14,7 +14,7 @@ class TaskMapper:
             updated_at = task.updated_at.isoformat(),
         )
     @staticmethod
-    def from_task_dto(task_dto: TaskDTO) -> Task:
+    def from_dto(task_dto: TaskDTO) -> Task:
         status = TaskStatus(task_dto.status)
         created_at = datetime.fromisoformat(task_dto.created_at)
         updated_at = datetime.fromisoformat(task_dto.updated_at)
