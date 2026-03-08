@@ -192,7 +192,7 @@ class Task:
         Raises:
             TypeError: If the value is not a `TaskStatus`.
         """
-        if type(new_status) is not TaskStatus:
+        if not isinstance(new_status, TaskStatus):
             raise TypeError("Status must be a TaskStatus")
 
     @staticmethod
