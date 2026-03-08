@@ -6,12 +6,16 @@ from task_cli.repository.task_repository import IRepository
 
 class TaskManager:
     """
-    Application service responsible for coordinating task operations.
+    Application service responsible for orchestrating task operations.
 
-    This class acts as the bridge between the domain layer (Task entity)
-    and the persistence layer (repository). It orchestrates the creation,
-    modification, deletion, and retrieval of tasks while ensuring proper
-    transformations between domain entities and DTOs.
+    The TaskManager coordinates interactions between the domain layer
+    (`Task` entities) and the persistence layer (`IRepository`). It
+    handles creation, updates, deletion, and retrieval of tasks while
+    performing the necessary transformations between domain entities
+    and data transfer objects (DTOs).
+
+    This class does not contain persistence logic itself; it delegates
+    storage responsibilities to the provided repository implementation.
     """
 
     def __init__(self, repository: IRepository) -> None:
@@ -21,26 +25,31 @@ class TaskManager:
         Parameters
         ----------
         repository : IRepository
-            Repository used for persistence operations.
+            Repository responsible for storing and retrieving tasks.
         """
         self._repository: IRepository = repository
 
     def add(self, description: str) -> TaskDTO:
         """
-        Create a new task.
+        Create and persist a new task.
 
-        A new task ID is generated based on the current maximum ID stored
+        A new identifier is generated using the maximum existing ID
         in the repository.
 
         Parameters
         ----------
         description : str
-            Description of the new task.
+            Human-readable description of the task.
 
         Returns
         -------
         TaskDTO
-            Data transfer object representing the newly created task.
+            DTO representing the newly created task.
+
+        Raises
+        ------
+        TaskValidationError
+            If the provided description violates domain validation rules.
         """
         with self._repository as repo:
             new_id: int = repo.get_max_id() + 1
@@ -57,6 +66,9 @@ class TaskManager:
         """
         Update the description of an existing task.
 
+        The task is retrieved from the repository, converted to a domain
+        entity, mutated, and then persisted again as a DTO.
+
         Parameters
         ----------
         task_id : int
@@ -68,6 +80,13 @@ class TaskManager:
         -------
         TaskDTO
             DTO representing the updated task.
+
+        Raises
+        ------
+        TaskNotFoundError
+            If the task does not exist in the repository.
+        TaskValidationError
+            If the new description violates domain validation rules.
         """
         with self._repository as repo:
             target_dto: TaskDTO = repo.read(task_id)
@@ -79,7 +98,7 @@ class TaskManager:
 
     def delete(self, task_id: int) -> TaskDTO:
         """
-        Delete a task from the repository.
+        Remove a task from the repository.
 
         Parameters
         ----------
@@ -89,7 +108,12 @@ class TaskManager:
         Returns
         -------
         TaskDTO
-            DTO of the deleted task.
+            DTO representing the removed task.
+
+        Raises
+        ------
+        TaskNotFoundError
+            If the task does not exist.
         """
         with self._repository as repo:
             task: TaskDTO = repo.read(task_id)
@@ -98,17 +122,22 @@ class TaskManager:
 
     def read(self, task_id: int) -> TaskDTO:
         """
-        Retrieve a task by its ID.
+        Retrieve a task by its identifier.
 
         Parameters
         ----------
         task_id : int
-            Identifier of the task to retrieve.
+            Identifier of the task.
 
         Returns
         -------
         TaskDTO
             DTO representing the requested task.
+
+        Raises
+        ------
+        TaskNotFoundError
+            If the task does not exist.
         """
         with self._repository as repo:
             return repo.read(task_id)
@@ -117,10 +146,13 @@ class TaskManager:
         """
         Change the status of a task.
 
+        The task is retrieved, converted to a domain entity,
+        updated, and then persisted again.
+
         Parameters
         ----------
-        status : str
-            New status value (must correspond to a TaskStatus value).
+        status : TaskStatus
+            New status to assign to the task.
         task_id : int
             Identifier of the task to update.
 
@@ -128,6 +160,13 @@ class TaskManager:
         -------
         TaskDTO
             DTO representing the updated task.
+
+        Raises
+        ------
+        TaskNotFoundError
+            If the task does not exist.
+        TypeError
+            If the provided status is not a valid `TaskStatus`.
         """
         with self._repository as repo:
             target_dto: TaskDTO = repo.read(task_id)
@@ -139,19 +178,17 @@ class TaskManager:
 
     def filter_by_status(self, status_filter: TaskStatus | None) -> list[TaskDTO]:
         """
-        Retrieve tasks filtered by status.
+        Retrieve tasks filtered by their status.
 
         Parameters
         ----------
-        status_filter : str | None
-            Status value used as filter. If None, all tasks are returned.
+        status_filter : TaskStatus | None
+            Status used as filter. If None, all tasks are returned.
 
         Returns
         -------
         list[TaskDTO]
-            List of tasks matching the filter.
+            List of DTOs matching the filter criteria.
         """
         with self._repository as repo:
-            if status_filter is None:
-                return repo.filter_by_status(None)
             return repo.filter_by_status(status_filter)
