@@ -13,14 +13,69 @@ init(autoreset=True)
 
 ANSI_ESCAPE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
 def visible_len(s: str) -> int:
+    """
+    Calcula la longitud de una cadena ignorando códigos ANSI de color.
+
+    Esto permite alinear texto con colores sin que los códigos influyan en
+    la longitud visual.
+
+    Parameters
+    ----------
+    s : str
+        Cadena que puede contener secuencias ANSI.
+
+    Returns
+    -------
+    int
+        Longitud visible de la cadena.
+    """
     return len(ANSI_ESCAPE.sub('', s))
 
 def truncate(text: str, width: int) -> str:
+    """
+    Trunca un texto a un ancho máximo, agregando '...' si es necesario.
+
+    Parameters
+    ----------
+    text : str
+        Texto a truncar.
+    width : int
+        Ancho máximo permitido.
+
+    Returns
+    -------
+    str
+        Texto truncado.
+    """
     if visible_len(text) <= width:
         return text
     return text[:width - 3] + "..."
 
 class TableStyle:
+    """
+    Configuración de estilo para tablas en consola.
+
+    Parameters
+    ----------
+    ascii_mode : bool, default=True
+        Si True, se usan caracteres ASCII simples. Si False, se usan
+        caracteres de caja UTF-8 para bordes más visuales.
+
+    Attributes
+    ----------
+    cell_border : str
+        Carácter que delimita las celdas.
+    row_sep : str
+        Carácter usado para separar filas.
+    header_sep : str
+        Carácter usado para separar encabezados.
+    corner_tl, corner_tr, corner_bl, corner_br : str
+        Esquinas de la tabla.
+    intersection, t_top, t_bot, t_left, t_right : str
+        Símbolos para intersecciones y uniones de líneas.
+    error : str
+        Símbolo para marcar errores.
+    """
     cell_border: str
     row_sep: str
     header_sep: str
@@ -60,7 +115,16 @@ class TableStyle:
             self.error = "✖"
 
 class TaskCliFormatter:
+    """
+    Formatea tareas (`TaskDTO`) para mostrarlas en consola.
 
+    Provee funciones para:
+    - Mostrar tablas de tareas.
+    - Mostrar detalles de una tarea individual.
+    - Formatear errores de cliente con colores y mensajes multilenguaje.
+
+    Usa `TableStyle` para determinar bordes y símbolos de tabla.
+    """
     _STATUS_ICON = {
         TaskStatus.TODO.value: Fore.YELLOW + "▷" + Style.RESET_ALL,
         TaskStatus.IN_PROGRESS.value: Fore.CYAN + "▶" + Style.RESET_ALL,
@@ -146,6 +210,21 @@ class TaskCliFormatter:
 
     @classmethod
     def format_task_table(cls, task: TaskDTO, style: TableStyle) -> str:
+        """
+        Genera una tabla de una sola fila para una tarea.
+
+        Parameters
+        ----------
+        task : TaskDTO
+            Tarea a mostrar.
+        style : TableStyle
+            Configuración visual de la tabla.
+
+        Returns
+        -------
+        str
+            Cadena formateada representando la tarea en tabla.
+        """
         header: str = cls._format_header(style=style)
         body: str = cls._format_task(task, style=style)
         no_format_table: list[str] = [header,body]
@@ -156,6 +235,21 @@ class TaskCliFormatter:
 
     @classmethod
     def format_tasks_table(cls, tasks: list[TaskDTO], style: TableStyle) -> str:
+        """
+        Genera una tabla para varias tareas.
+
+        Parameters
+        ----------
+        tasks : list[TaskDTO]
+            Lista de tareas a mostrar.
+        style : TableStyle
+            Configuración visual de la tabla.
+
+        Returns
+        -------
+        str
+            Cadena formateada con todas las tareas en tabla.
+        """
         header: str =cls._format_header(style=style)
         body: list[str] = cls._format_task_list(tasks, style=style)
         no_format_table: list[str] = [header,*body]
@@ -211,6 +305,26 @@ class TaskCliFormatter:
 
     @classmethod
     def format_task_detail(cls, task: TaskDTO, style: TableStyle) -> str:
+        """
+        Muestra los detalles completos de una tarea en formato tabla.
+
+        Incluye:
+        - ID y estado con icono.
+        - Descripción.
+        - Fecha de creación y actualización.
+
+        Parameters
+        ----------
+        task : TaskDTO
+            Tarea a mostrar.
+        style : TableStyle
+            Configuración visual de la tabla.
+
+        Returns
+        -------
+        str
+            Tabla detallada formateada como string.
+        """
         created = datetime.fromisoformat(task.created_at)
         updated = datetime.fromisoformat(task.updated_at)
 
@@ -238,6 +352,28 @@ class TaskCliFormatter:
 
     @staticmethod
     def format_client_error(exc, style, lang="es"):
+        """
+        Formatea un error de Task para mostrarlo en consola.
+
+        Incluye:
+        - Mensaje de error localizado según `lang`.
+        - Indicador visual de error.
+        - Mensaje de reintento.
+
+        Parameters
+        ----------
+        exc : TaskException
+            Error ocurrido.
+        style : TableStyle
+            Estilo visual (bordes y símbolos).
+        lang : str, default='es'
+            Idioma para el mensaje.
+
+        Returns
+        -------
+        str
+            Cadena lista para imprimir en consola con colores.
+        """
         # 1. Buscamos el catálogo del idioma
         lang_dict = ERROR_CATALOG.get(lang, ERROR_CATALOG["en"])
 
