@@ -12,19 +12,58 @@ import argparse
 
 def show_error(exc: TaskException, style: TableStyle, lang: str = "en") -> None:
     """
-    Muestra en consola un error de Task usando TaskCliFormatter.
-    Usa ERROR_CATALOG y RETRY_MESSAGES para multi lenguaje.
+    Display a formatted client-facing error message in the CLI.
+
+    This function converts a domain exception into a user-friendly
+    message using `TaskCliFormatter`. It supports multilingual
+    output and optional table styling.
+
+    Parameters
+    ----------
+    exc : TaskException
+        Exception raised by the domain layer.
+    style : TableStyle
+        Table styling configuration for formatted output.
+    lang : str, optional
+        Language used for error messages. Defaults to "en".
     """
     print(TaskCliFormatter.format_client_error(exc, style, lang=lang))
 
 class CommandSetup:
-    def __init__(self, registry: argparse._SubParsersAction, lang: str, func_dict: dict[Action,Callable]) -> None:
+    """
+    Configure all CLI commands and their arguments.
 
+    This class is responsible for registering command parsers
+    inside the main `argparse` command registry and binding
+    them to their corresponding command handlers.
+
+    It uses language-specific command metadata to configure
+    argument names, help messages, and command descriptions.
+    """
+    def __init__(self, registry: argparse._SubParsersAction, lang: str, func_dict: dict[Action,Callable]) -> None:
+        """
+        Initialize command registration.
+
+        Parameters
+        ----------
+        registry : argparse._SubParsersAction
+            Subparser registry where CLI commands will be added.
+        lang : str
+            Language used for command text and help messages.
+        func_dict : dict[Action, Callable]
+            Mapping between actions and command handler functions.
+        """
         self.texts = commands_data.get(lang, commands_data["en"])
         self.functions = func_dict
         self._setup_all_commands(registry)
 
     def _setup_all_commands(self, command_registry: argparse._SubParsersAction):
+        """
+        Register all supported CLI commands.
+
+        This method delegates the creation of each command parser
+        to dedicated setup methods.
+        """
         self._setup_add_command(command_registry)
         self._setup_update_command(command_registry)
         self._setup_delete_command(command_registry)
@@ -173,9 +212,29 @@ class CommandSetup:
 
 
 class CommandInterface:
+    """
+    Command-line interface controller for the task CLI.
+
+    This class connects the argument parser, command handlers,
+    and the domain `TaskManager`. It parses user input,
+    executes the corresponding command, and manages
+    error handling and formatted output.
+    """
     _manager: TaskManager
 
     def __init__(self, manager: TaskManager, style: bool = False, lang: str = "en") -> None:
+        """
+        Initialize the CLI interface.
+
+        Parameters
+        ----------
+        manager : TaskManager
+            Domain service responsible for task operations.
+        style : bool, optional
+            Enable styled output in CLI tables.
+        lang : str, optional
+            Language used for command texts and messages.
+        """
         self._manager = manager
         self.style = style
         self.lang = lang
@@ -199,6 +258,13 @@ class CommandInterface:
         CommandSetup(command_registry, self.lang, self.map_functions)
 
     def run(self) -> None:
+        """
+        Execute the CLI application.
+
+        Parses command-line arguments, dispatches the corresponding
+        command handler, and manages error handling for both
+        user-facing and system-level exceptions.
+        """
         args = self._parser.parse_args()
 
         try:
@@ -220,14 +286,23 @@ class CommandInterface:
             print(f"{Fore.RED}FATAL: Ocurrió un error inesperado. {type(e).__name__}: {e}{Style.RESET_ALL}")
 
     def show_feedback(self, task: TaskDTO, style: bool=False) -> None:
+        """
+        Display a detailed view of a task after an operation.
+        """
         print(feedback_msgs[self.lang][Msgs.SHOW])
         print(TaskCliFormatter.format_task_detail(task, TableStyle(style)))
 
     def quick_show_feedback(self, task: TaskDTO, style: bool=False) -> None:
+        """
+        Display a compact view of a single task.
+        """
         print(feedback_msgs[self.lang][Msgs.LIST])
         print(TaskCliFormatter.format_task_table(task, TableStyle(style)))
 
     def quick_show_list(self, tasks: list[TaskDTO], style: bool=False) -> None:
+        """
+        Display a table with multiple tasks.
+        """
         print(feedback_msgs[self.lang][Msgs.SHOW])
         print(TaskCliFormatter.format_tasks_table(tasks, TableStyle(style)))
 
