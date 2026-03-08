@@ -7,7 +7,7 @@ from task_cli.ui.command_interface import CommandInterface
 def main():
     repo: IRepository = make_task_repository(RepoType.SQLite)
     task_manager = TaskManager(repo)
-    cli_handler = CommandInterface(task_manager)
+    cli_handler = CommandInterface(task_manager, lang="es")
     cli_handler.run()
 
 if __name__ == "__main__":
