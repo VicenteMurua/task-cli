@@ -65,6 +65,6 @@ def make_task_repository(repo_type: RepoType = RepoType.SQLite) -> IRepository:
     path_dir = Path(user_data_dir("task_cli"))
     path_dir.mkdir(parents=True, exist_ok=True)
 
-    file_dir = path_dir / f"task.{repo_type}"
+    file_dir = path_dir / f"task.{repo_type.value}"
 
     return factory(file_dir)
