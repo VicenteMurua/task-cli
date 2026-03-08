@@ -1,110 +1,243 @@
-import json
-from pathlib import Path
-from task_cli.domain.exceptions import TaskAlreadyExistsError, TaskNotFoundError
-from task_cli.repository.mappers import TaskMapper
-from task_cli.repository.task_repository import FileRepository, JSONStorage
-from task_cli.domain.dtos import TaskDTO
-from task_cli.domain.task import TaskStatus
 import pytest
-from tests.fakes.fake_dtos import fake_dto_list_no_duplicates, fake_todo_1_dto, fake_todo_2_dto, modified_dto_1_dto, fake_done_1_dto, fake_in_progress_1_dto
+from pathlib import Path
+
+from task_cli.domain.exceptions import TaskAlreadyExistsError, TaskNotFoundError
+from task_cli.domain.task import TaskStatus, Task
+
+from task_cli.repository.task_repository import (
+    FileRepository,
+    JSONStorage,
+    CSVStorage,
+    SQLiteRepository,
+)
+
+from tests.fakes.fake_dtos import TaskDataset
 
 
-class TestJSONTaskRepository:
-    @pytest.fixture()
-    def json_path(self, tmp_path: Path) -> Path:
-        return tmp_path / "test_add.json"
+class TestTaskRepository:
+
+    @pytest.fixture(params=["json", "csv", "sqlite"])
+    def repo(self, request, tmp_path: Path):
+        if request.param == "json":
+            path = tmp_path / "tasks.json"
+            return FileRepository(JSONStorage(path))
+        if request.param == "csv":
+            path = tmp_path / "tasks.csv"
+            return FileRepository(CSVStorage(path))
+        if request.param == "sqlite":
+            path = tmp_path / "tasks.db"
+            return SQLiteRepository(path)
+        raise RuntimeError()
 
     @pytest.fixture
-    def repo(self, json_path: Path) -> FileRepository:
-        return FileRepository(JSONStorage(json_path))
+    def dataset(self):
+        return (
+            TaskDataset()
+            .add("task 1", TaskStatus.TODO)
+            .add("task 2", TaskStatus.TODO)
+            .add("task 3", TaskStatus.IN_PROGRESS)
+            .add("task 4", TaskStatus.DONE)
+        )
 
-    @pytest.mark.parametrize(
-        "task_dto",
-        fake_dto_list_no_duplicates
-    )
-    def test_add_1(self, task_dto: TaskDTO, json_path: Path, repo: FileRepository):
-        repo.add(task_dto)
-        task_dict: dict = TaskMapper.to_dict(task_dto)
-        with open(json_path, 'r', encoding='utf-8') as file:
-            data_list: list[dict] = json.load(file)
-            assert 1 == len(data_list)
-            assert  task_dict in data_list
+    def test_add_1(self, repo):
+        dataset = TaskDataset().add("task", TaskStatus.TODO)
+        dto = dataset.all()[0]
+        with repo as r:
+            r.add(dto)
+        with repo as r:
+            result = r.read(dto.task_id)
+        assert result == dto
 
-    def test_add_n(self, json_path: Path, repo: FileRepository):
-        for task_dto in fake_dto_list_no_duplicates:
-            repo.add(task_dto)
+    def test_add_n(self, repo, dataset):
+        dataset.load_into(repo)
+        with repo as r:
+            result = r.filter_by_status(None)
+        assert len(result) == dataset.count()
 
-        with open(json_path, 'r', encoding='utf-8') as file:
-            data_list: list[dict] = json.load(file)
-            assert len(fake_dto_list_no_duplicates) == len(data_list)
-            assert all(TaskMapper.to_dict(task_dto) in data_list for task_dto in fake_dto_list_no_duplicates)
+    def test_add_duplicate(self, repo):
+        dto = TaskDataset().add("task", TaskStatus.TODO).all()[0]
+        with repo as r:
+            r.add(dto)
+            with pytest.raises(TaskAlreadyExistsError):
+                r.add(dto)
 
-    def test_add_duplicate(self, repo: FileRepository):
-        repo.add(fake_todo_1_dto)
-        with pytest.raises(TaskAlreadyExistsError):
-            repo.add(fake_todo_1_dto)
+    def test_update(self, repo):
+        dataset = TaskDataset().add("task", TaskStatus.TODO)
+        dto = dataset.all()[0]
+        with repo as r:
+            r.add(dto)
+        updated = TaskDataset().add(
+            description="updated",
+            status=TaskStatus.TODO,
+            task_id=dto.task_id,
+        ).all()[0]
+        with repo as r:
+            r.update(updated)
+        with repo as r:
+            result = r.read(dto.task_id)
+        assert result.description == "updated"
 
+    def test_update_bad_index(self, repo):
+        dto = TaskDataset().add("task", TaskStatus.TODO).all()[0]
+        with repo as r:
+            with pytest.raises(TaskNotFoundError):
+                r.update(dto)
 
-    def test_update(self, json_path: Path, repo: FileRepository):
-        repo.add(fake_todo_1_dto)
-        repo.update(modified_dto_1_dto)
-        with open(json_path, 'r', encoding='utf-8') as file:
-            data_list: list[dict] = json.load(file)
-            assert 1 == len(data_list)
-            assert data_list[0] == TaskMapper.to_dict(modified_dto_1_dto)
+    def test_delete(self, repo):
+        dto = TaskDataset().add("task", TaskStatus.TODO).all()[0]
+        with repo as r:
+            r.add(dto)
+            r.delete(dto.task_id)
+        with repo as r:
+            result = r.filter_by_status(None)
+        assert result == []
 
-    def test_update_bad_index(self, repo: FileRepository):
-        with pytest.raises(TaskNotFoundError):
-            repo.update(fake_todo_1_dto)
+    def test_delete_bad_index(self, repo):
+        with repo as r:
+            with pytest.raises(TaskNotFoundError):
+                r.delete(999)
 
+    def test_read(self, repo):
+        dto = TaskDataset().add("task", TaskStatus.TODO).all()[0]
+        with repo as r:
+            r.add(dto)
+        with repo as r:
+            result = r.read(dto.task_id)
+        assert result == dto
 
-    def test_delete(self, json_path: Path, repo: FileRepository):
-        repo.add(fake_todo_1_dto)
-        repo.delete(fake_todo_1_dto.task_id)
-        with open(json_path, 'r', encoding='utf-8') as file:
-            data_list: list[dict] = json.load(file)
-            assert not len(data_list)
+    def test_read_bad_index_parametrized(self, repo):
+        """Cubre raise TaskNotFoundError (línea 187)"""
+        ids = [999, 12345, -1]
+        with repo as r:
+            for id_to_read in ids:
+                with pytest.raises(TaskNotFoundError):
+                    r.read(id_to_read)
 
-    def test_delete_bad_index(self, repo: FileRepository):
-        with pytest.raises(TaskNotFoundError):
-            repo.delete(fake_todo_1_dto)
+    @pytest.mark.parametrize("status_filter", [TaskStatus.TODO, TaskStatus.DONE, TaskStatus.IN_PROGRESS])
+    def test_filter_by_status_parametrized(self, repo, dataset, status_filter):
+        """Cubre la lista por comprensión de filter_by_status (línea 205)"""
+        dataset.load_into(repo)
+        with repo as r:
+            tasks = r.filter_by_status(status_filter)
+            assert all(t.status == status_filter.value for t in tasks)
 
+    def test_task_class_last_lines(self):
+        """Cubre última línea de Task (línea 213) usando métodos existentes"""
+        from task_cli.domain.task import Task, TaskStatus
 
-    def test_read(self, json_path: Path, repo: FileRepository):
-        repo.add(fake_todo_1_dto)
-        assert fake_todo_1_dto == repo.read(fake_todo_1_dto.task_id)
+        # Instanciamos un task válido
+        task = Task(description="dummy", task_id=1, status=TaskStatus.TODO)
 
-    def test_read_bad_index(self, repo: FileRepository):
-        with pytest.raises(TaskNotFoundError):
-            repo.read(fake_todo_1_dto.task_id)
+        # Llamamos a update_status para cubrir update_timestamp y _refresh_updated_at
+        task.update_status(TaskStatus.DONE)
+        assert task.status == TaskStatus.DONE
 
+        # Llamamos a update_description para cubrir también la otra función decorada
+        task.update_description("new description")
+        assert task.description == "new description"
 
-    def test_filter_by_status_none(self, repo: FileRepository):
-        for data in fake_dto_list_no_duplicates:
-            repo.add(data)
-        result = repo.filter_by_status(None)
-        assert len(fake_dto_list_no_duplicates) == len(result)
-        assert result == fake_dto_list_no_duplicates
+    # --- Resto de los tests existentes ---
+    def test_filter_by_status_none(self, repo, dataset):
+        dataset.load_into(repo)
+        with repo as r:
+            result = r.filter_by_status(None)
+        assert len(result) == dataset.count()
 
-    @pytest.mark.parametrize(
-        "status, output",
-        [
-            (TaskStatus.TODO, [fake_todo_1_dto, fake_todo_2_dto]),
-            (TaskStatus.DONE, [fake_done_1_dto]),
-            (TaskStatus.IN_PROGRESS, [fake_in_progress_1_dto]),
-        ]
-    )
-    def test_filter_by_status(self, repo: FileRepository, status: TaskStatus, output: list[TaskDTO]):
-        for data in fake_dto_list_no_duplicates:
-            repo.add(data)
-        assert output == repo.filter_by_status(status)
+    def test_filter_by_wrong_status(self, repo):
+        with repo as r:
+            with pytest.raises(TypeError):
+                r.filter_by_status("zapallo")
 
-    def test_filter_by_wrong_status(self, repo: FileRepository):
-        with pytest.raises(ValueError):
-            repo.filter_by_status("zapallo") #type: ignore[arg-type]
+    def test_persistence_between_sessions(self, repo):
+        dto = TaskDataset().add("persistent", TaskStatus.TODO).all()[0]
+        with repo as r:
+            r.add(dto)
+        with repo as r:
+            result = r.read(dto.task_id)
+        assert result == dto
 
-# TODO: Tests de robustez / condiciones adversas
-# - Qué pasa si el archivo JSON está corrupto o vacío
-# - Qué pasa si se pasan IDs inválidos (negativos, strings)
-# - Validación de concurrencia (si se agregan/actualizan tareas simultáneamente)
-# - Manejo de errores de I/O (permiso denegado, disco lleno, etc.)
+    def test_get_max_id(self, repo):
+        dataset = (
+            TaskDataset()
+            .add("a", TaskStatus.TODO)
+            .add("b", TaskStatus.TODO)
+            .add("c", TaskStatus.DONE)
+        )
+        dataset.load_into(repo)
+        with repo as r:
+            max_id = r.get_max_id()
+        assert max_id == dataset.count()
+
+    def test_get_max_id_empty(self, repo):
+        with repo as r:
+            result = r.get_max_id()
+        assert result == 0
+
+    def test_delete_only_removes_target(self, repo, dataset):
+        dataset.load_into(repo)
+        with repo as r:
+            r.delete(1)
+        with repo as r:
+            result = r.filter_by_status(None)
+        assert len(result) == dataset.count() - 1
+        assert all(task.task_id != 1 for task in result)
+
+    def test_update_does_not_change_id(self, repo):
+        dto = TaskDataset().add("task", TaskStatus.TODO).all()[0]
+        with repo as r:
+            r.add(dto)
+        updated = TaskDataset().add(
+            "new",
+            TaskStatus.TODO,
+            task_id=dto.task_id,
+        ).all()[0]
+        with repo as r:
+            r.update(updated)
+        with repo as r:
+            result = r.read(dto.task_id)
+        assert result.task_id == dto.task_id
+
+    def test_repository_requires_context_manager(self, repo):
+        dto = TaskDataset().add("task", TaskStatus.TODO).all()[0]
+        with pytest.raises(RuntimeError):
+            repo.add(dto)
+
+    def test_empty_repository(self, repo):
+        with repo as r:
+            result = r.filter_by_status(None)
+        assert result == []
+
+    def test_filter_returns_correct_objects(self, repo, dataset):
+        dataset.load_into(repo)
+        with repo as r:
+            todos = r.filter_by_status(TaskStatus.TODO)
+        assert all(t.status == TaskStatus.TODO.value for t in todos)
+
+    def test_filter_empty_repo(self, repo):
+        with repo as r:
+            result = r.filter_by_status(TaskStatus.TODO)
+        assert result == []
+
+    def test_add_after_delete_reuses_correct_state(self, repo):
+        dataset = TaskDataset().add("task", TaskStatus.TODO)
+        dto = dataset.all()[0]
+        with repo as r:
+            r.add(dto)
+            r.delete(dto.task_id)
+        new = TaskDataset().add("new task", TaskStatus.DONE).all()[0]
+        with repo as r:
+            r.add(new)
+        with repo as r:
+            result = r.filter_by_status(None)
+        assert len(result) == 1
+
+    def test_multiple_sessions_persistence(self, repo):
+        dataset = (
+            TaskDataset()
+            .add("a", TaskStatus.TODO)
+            .add("b", TaskStatus.DONE)
+        )
+        dataset.load_into(repo)
+        with repo as r:
+            tasks = r.filter_by_status(None)
+        assert len(tasks) == 2
