@@ -18,3 +18,4 @@ __pycache__/
 arbol.txt
 instalado.txt
 contexto.md
+.coverage
