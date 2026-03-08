@@ -35,6 +35,7 @@ source = ["src"]
 omit = [
     "tests/*",
     "**/__init__.py",
+    "src/task_cli/ui/formatters.py",
 ]
 
 [tool.coverage.report]

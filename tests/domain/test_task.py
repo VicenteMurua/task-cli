@@ -91,6 +91,10 @@ class TestTaskBusinessRules:
 
 class TestTaskTypeSafety:
     """Pruebas de contrato técnico (Programador)."""
+    def test_id_must_be_integer(self, task_params):
+        task_params["task_id"] = "zapallo"
+        with pytest.raises(TypeError, match="ID must be a integer"):
+            Task(**task_params)
 
     def test_description_must_be_string(self, task_params):
         task_params["description"] = 123
@@ -102,6 +106,15 @@ class TestTaskTypeSafety:
         with pytest.raises(TypeError, match="Status must be a TaskStatus"):
             Task(**task_params)
 
+    def test_creation_date_must_be_datetime(self, task_params):
+        task_params["created_at"] = "hola"
+        with pytest.raises(TypeError, match="CreatedAt must be a datetime or None"):
+            Task(**task_params)
+
+    def test_updated_date_must_be_datetime(self, task_params):
+        task_params["updated_at"] = "hola"
+        with pytest.raises(TypeError, match="UpdatedAt must be a datetime or None"):
+            Task(**task_params)
 
 class TestTaskBehavior:
     """Pruebas de los métodos de mutación y decoradores."""
