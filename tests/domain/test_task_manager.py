@@ -168,3 +168,17 @@ class TestTaskManager:
 
         with pytest.raises(ValueError):
             manager.mark("INVALID_STATUS", dto.task_id)
+
+    def test_filter_by_status_none_returns_all(self, manager: TaskManager):
+        # Agregamos varias tareas
+        dto1 = manager.add("task 1")
+        dto2 = manager.add("task 2")
+        dto3 = manager.add("task 3")
+
+        # Llamamos filter_by_status con None
+        tasks = manager.filter_by_status(None)
+
+        # Debe devolver todas las tareas
+        assert len(tasks) == 3
+        descriptions = {t.description for t in tasks}
+        assert descriptions == {"task 1", "task 2", "task 3"}
