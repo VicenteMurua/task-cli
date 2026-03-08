@@ -24,10 +24,9 @@ class TestTaskRepository:
         if request.param == "csv":
             path = tmp_path / "tasks.csv"
             return FileRepository(CSVStorage(path))
-        if request.param == "sqlite":
-            path = tmp_path / "tasks.db"
-            return SQLiteRepository(path)
-        raise RuntimeError()
+
+        path = tmp_path / "tasks.db"
+        return SQLiteRepository(path)
 
     @pytest.fixture
     def dataset(self):
