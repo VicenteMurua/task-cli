@@ -272,7 +272,7 @@ class SQLiteRepository(IDirectAccessRepository):
         except sqlite3.IntegrityError as e:
             if "UNIQUE constraint failed: tasks.task_id" in str(e):
                 raise TaskAlreadyExistsError(new_data.task_id)
-            raise
+            raise #pragma: no cover
 
     @ensure_active
     def update(self, updated_data: TaskDTO) -> None:

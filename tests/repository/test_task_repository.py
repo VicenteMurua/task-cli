@@ -1,8 +1,10 @@
 import pytest
 from pathlib import Path
 
+from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.exceptions import TaskAlreadyExistsError, TaskNotFoundError
-from task_cli.domain.task import TaskStatus, Task
+from task_cli.domain.task import TaskStatus
+
 
 from task_cli.repository.task_repository import (
     FileRepository,
@@ -240,3 +242,36 @@ class TestTaskRepository:
         with repo as r:
             tasks = r.filter_by_status(None)
         assert len(tasks) == 2
+
+    def test_repositories_rollback_on_exception(self, repo):
+        """
+        Este test fuerza un error dentro del 'with' para ejecutar:
+        1. El rollback en SQLiteRepository.
+        2. El bloque 'if exc_type' (el que no guarda) en FileRepository.
+        """
+
+        # 1. Preparamos un DTO para intentar insertarlo
+        dto = TaskDTO(
+            task_id=999,
+            description="test rollback",
+            status="todo",
+            created_at="2023-01-01",
+            updated_at="2023-01-01"
+        )
+
+        # 2. Abrimos el repo y PROVOCAMOS un error manual (ZeroDivisionError)
+        # Esto hará que entre al 'if exc_type:' de los métodos __exit__
+        with pytest.raises(ZeroDivisionError):
+            with repo as r:
+                r.add(dto)
+                # Justo después de añadirlo, rompemos la ejecución
+                # En SQLite esto debería disparar el rollback()
+                # En FileRepository esto debería hacer que NO se llame a save()
+                invalid_operation = 1 / 0
+                return invalid_operation
+
+                # 3. Verificamos que los cambios NO se aplicaron
+        # Si el rollback/no-save funcionó, el ID 999 no debe existir
+        with repo as r:
+            with pytest.raises(TaskNotFoundError):
+                r.read(999)

@@ -24,7 +24,28 @@ dev =[
 # Esto permite que al escribir 'task-cli' en la terminal se ejecute tu app
 # Asume que en main.py tienes una función llamada def main():
 task-cli = "task_cli.main:main"
+[tool.pytest.ini_options]
+# Configura pytest para que siempre use coverage y busque en la carpeta src
+addopts = "--cov=src --cov-report=term-missing"
+testpaths = ["tests"]
 
+[tool.coverage.run]
+# Solo queremos medir el código de la app, no los tests ni los fakes
+source = ["src"]
+omit = [
+    "tests/*",
+    "**/__init__.py",
+]
+
+[tool.coverage.report]
+# Aquí está la magia: esto le dice a coverage que NO cuente estas líneas como "faltantes"
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "pass",
+    "@(abc\\.)?abstractmethod",
+]
 [tool.hatch.build.targets.wheel]
 # Hatch encontrará la carpeta task_cli automáticamente en la raíz
 packages = ["src/task_cli"]
