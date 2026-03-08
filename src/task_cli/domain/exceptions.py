@@ -18,6 +18,9 @@ class TaskIDError(TaskValidationError):
     pass
 
 # --- CAPA DE PERSISTENCIA Y LÓGICA DE NEGOCIO ---
+class NoTaskOnFilter(TaskException, ValueError):
+    def __init__(self, status_filter: str):
+        self.filter = status_filter
 
 class TaskNotFoundError(TaskException, KeyError):
     """Se lanza cuando se intenta operar sobre un ID que no existe en el repositorio."""
