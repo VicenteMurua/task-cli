@@ -1,3 +1,4 @@
+from typing import Callable
 from colorama import Fore, Style
 from task_cli.domain.exceptions import TaskException, TaskValidationError, TaskNotFoundError, NoTaskOnFilter
 from task_cli.domain.task import TaskStatus
@@ -16,6 +17,161 @@ def show_error(exc: TaskException, style: TableStyle, lang: str = "en") -> None:
     """
     print(TaskCliFormatter.format_client_error(exc, style, lang=lang))
 
+class CommandSetup:
+    def __init__(self, registry: argparse._SubParsersAction, lang: str, func_dict: dict[Action,Callable]) -> None:
+
+        self.texts = commands_data.get(lang, commands_data["en"])
+        self.functions = func_dict
+        self._setup_all_commands(registry)
+
+    def _setup_all_commands(self, command_registry: argparse._SubParsersAction):
+        self._setup_add_command(command_registry)
+        self._setup_update_command(command_registry)
+        self._setup_delete_command(command_registry)
+        self._setup_mark_done_command(command_registry)
+        self._setup_mark_in_progress_command(command_registry)
+        self._setup_list_command(command_registry)
+        self._setup_read_command(command_registry)
+
+    def _setup_add_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.ADD
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        description = data["parser1"]
+        parser_add = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_add.add_argument(
+            description["name"],
+            help=description["help"]
+        )
+        parser_add.set_defaults(func=command_function)
+
+    def _setup_update_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.UPDATE
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        task_id = data["parser1"]
+        description = data["parser2"]
+        parser_update = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_update.add_argument(
+            task_id["name"],
+            type=int,
+            help=task_id["help"]
+        )
+        parser_update.add_argument(
+            description["name"],
+            help=description["help"]
+        )
+        parser_update.set_defaults(func=command_function)
+
+    def _setup_delete_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.DELETE
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        task_id = data["parser1"]
+        parser_delete = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_delete.add_argument(
+            task_id["name"],
+            type=int,
+            help=task_id["help"]
+        )
+        parser_delete.set_defaults(func=command_function)
+
+    def _setup_read_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.READ
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        task_id = data["parser1"]
+        detail  = data["parser2"]
+        parser_read = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_read.add_argument(
+            task_id["name"],
+            type=int,
+            help=task_id["help"]
+        )
+        parser_read.add_argument(
+            detail["name"],
+            detail["long name"],
+            action="store_true",
+            help=detail["help"]
+        )
+        parser_read.set_defaults(func=command_function)
+
+    def _setup_mark_done_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.MARK_DONE
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        task_id = data["parser1"]
+        parser_mark_done = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_mark_done.add_argument(
+            task_id["name"],
+            type = int,
+            help = task_id["help"]
+        )
+        parser_mark_done.set_defaults(
+            func=command_function,
+            status=TaskStatus.DONE
+        )
+
+    def _setup_mark_in_progress_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.MARK_IN_PROGRESS
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        task_id = data["parser1"]
+        parser_mark_in_progress = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_mark_in_progress.add_argument(
+            task_id["name"],
+            type = int,
+            help=task_id["help"]
+        )
+        parser_mark_in_progress.set_defaults(
+            func=command_function,
+            status = TaskStatus.IN_PROGRESS
+        )
+
+    def _setup_list_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.LIST
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        filter_tasks = data["parser1"]
+        parser_list = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_list.add_argument(
+            filter_tasks["name"],
+            nargs="?",
+            default=None,
+            choices=filter_tasks["choices"],
+            help=filter_tasks["help"]
+        )
+        parser_list.set_defaults(func=command_function)
+
+
 class CommandInterface:
     _manager: TaskManager
 
@@ -23,14 +179,27 @@ class CommandInterface:
         self._manager = manager
         self.style = style
         self.lang = lang
-
+        self.map_functions = {
+            Action.ADD: self._cmd_add,
+            Action.UPDATE: self._cmd_update,
+            Action.DELETE: self._cmd_delete,
+            Action.READ: self._cmd_read,
+            Action.MARK_DONE: self._cmd_mark,
+            Action.MARK_IN_PROGRESS: self._cmd_mark,
+            Action.LIST: self._cmd_list,
+        }
         self.texts = commands_data.get(self.lang, commands_data["en"])
 
         self._parser = argparse.ArgumentParser(prog="task-cli")
         self._setup_all_commands()
 
+    def _setup_all_commands(self):
+        command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)
+
+        CommandSetup(command_registry, self.lang, self.map_functions)
+
     def run(self) -> None:
-        args = self._parser.parse_args(sys.argv[1:])
+        args = self._parser.parse_args()
 
         try:
             args.func(args)
@@ -49,6 +218,7 @@ class CommandInterface:
         # 3. Errores catastróficos (Se cortó la luz, no hay disco, etc.)
         except Exception as e:
             print(f"{Fore.RED}FATAL: Ocurrió un error inesperado. {type(e).__name__}: {e}{Style.RESET_ALL}")
+
     def show_feedback(self, task: TaskDTO, style: bool=False) -> None:
         print(feedback_msgs[self.lang][Msgs.SHOW])
         print(TaskCliFormatter.format_task_detail(task, TableStyle(style)))
@@ -94,137 +264,3 @@ class CommandInterface:
         if not task_list:
             raise NoTaskOnFilter(args.filter)
         self.quick_show_list(task_list, self.style)
-
-    def _setup_all_commands(self):
-        command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)
-        self._setup_add_command(command_registry)
-        self._setup_update_command(command_registry)
-        self._setup_delete_command(command_registry)
-        self._setup_mark_done_command(command_registry)
-        self._setup_mark_in_progress_command(command_registry)
-        self._setup_list_command(command_registry)
-        self._setup_read_command(command_registry)
-
-    def _setup_add_command(self, command_registry: argparse._SubParsersAction):
-        data = self.texts[Action.ADD]
-        command = data["command"]
-        description = data["parser1"]
-        parser_add = command_registry.add_parser(
-            name=command["name"],
-            help=command["help"]
-        )
-        parser_add.add_argument(
-            description["name"],
-            help=description["help"]
-        )
-        parser_add.set_defaults(func = self._cmd_add)
-
-    def _setup_update_command(self, command_registry: argparse._SubParsersAction):
-        data = self.texts[Action.UPDATE]
-        command = data["command"]
-        task_id = data["parser1"]
-        description = data["parser2"]
-        parser_update = command_registry.add_parser(
-            name=command["name"],
-            help=command["help"]
-        )
-        parser_update.add_argument(
-            task_id["name"],
-            type=int,
-            help=task_id["help"]
-        )
-        parser_update.add_argument(
-            description["name"],
-            help=description["help"]
-        )
-        parser_update.set_defaults(func = self._cmd_update)
-
-    def _setup_delete_command(self, command_registry: argparse._SubParsersAction):
-        data = self.texts[Action.DELETE]
-        command = data["command"]
-        task_id = data["parser1"]
-        parser_delete = command_registry.add_parser(
-            name=command["name"],
-            help=command["help"]
-        )
-        parser_delete.add_argument(
-            task_id["name"],
-            type=int,
-            help=task_id["help"]
-        )
-        parser_delete.set_defaults(func = self._cmd_delete)
-
-    def _setup_read_command(self, command_registry: argparse._SubParsersAction):
-        data = self.texts[Action.READ]
-        command = data["command"]
-        task_id = data["parser1"]
-        detail  = data["parser2"]
-        parser_read = command_registry.add_parser(
-            name=command["name"],
-            help=command["help"]
-        )
-        parser_read.add_argument(
-            task_id["name"],
-            type=int,
-            help=task_id["help"]
-        )
-        parser_read.add_argument(
-            detail["name"],
-            detail["long name"],
-            action="store_true",
-            help=detail["help"]
-        )
-        parser_read.set_defaults(func = self._cmd_read)
-
-    def _setup_mark_done_command(self, command_registry: argparse._SubParsersAction):
-        data = self.texts[Action.MARK_DONE]
-        command = data["command"]
-        task_id = data["parser1"]
-        parser_mark_done = command_registry.add_parser(
-            name=command["name"],
-            help=command["help"]
-        )
-        parser_mark_done.add_argument(
-            task_id["name"],
-            type = int,
-            help = task_id["help"]
-        )
-        parser_mark_done.set_defaults(
-            func = self._cmd_mark,
-            status=TaskStatus.DONE
-        )
-
-    def _setup_mark_in_progress_command(self, command_registry: argparse._SubParsersAction):
-        data = self.texts[Action.MARK_IN_PROGRESS]
-        command = data["command"]
-        task_id = data["parser1"]
-        parser_mark_in_progress = command_registry.add_parser(
-            name=command["name"],
-            help=command["help"]
-        )
-        parser_mark_in_progress.add_argument(
-            task_id["name"],
-            type = int,
-            help=task_id["help"]
-        )
-        parser_mark_in_progress.set_defaults(
-            func = self._cmd_mark,
-            status = TaskStatus.IN_PROGRESS
-        )
-
-    def _setup_list_command(self, command_registry: argparse._SubParsersAction):
-        data = self.texts[Action.LIST]
-        command = data["command"]
-        filter_tasks = data["parser1"]
-        parser_list = command_registry.add_parser(
-            name=command["name"],
-            help=command["help"]
-        )
-        parser_list.add_argument(
-            filter_tasks["name"],
-            nargs="?",
-            default=None,
-            choices=filter_tasks["choices"],
-            help=filter_tasks["help"]
-        )
-        parser_list.set_defaults(func = self._cmd_list)
