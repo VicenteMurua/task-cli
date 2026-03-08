@@ -70,7 +70,7 @@ class TestTaskManager:
 
     @pytest.mark.parametrize(
         "status",
-        [status.value for status in TaskStatus]
+        [status for status in TaskStatus]
     )
     def test_mark(self, manager: TaskManager, status):
 
@@ -81,7 +81,7 @@ class TestTaskManager:
         with manager._repository as repo:
             task = repo.read(dto.task_id)
 
-        assert task.status == status
+        assert task.status == status.value
 
 
     def test_filter_tasks(self, manager: TaskManager):
@@ -89,14 +89,14 @@ class TestTaskManager:
         for desc in fake_desc_list:
             manager.add(desc)
 
-        manager.mark("in-progress", 1)
-        manager.mark("done", 2)
-        manager.mark("done", 3)
-        manager.mark("todo", 3)
+        manager.mark(TaskStatus.IN_PROGRESS, 1)
+        manager.mark(TaskStatus.DONE, 2)
+        manager.mark(TaskStatus.DONE, 3)
+        manager.mark(TaskStatus.TODO, 3)
 
-        done_tasks = manager.filter_by_status("done")
-        in_progress_tasks = manager.filter_by_status("in-progress")
-        todo_tasks = manager.filter_by_status("todo")
+        done_tasks = manager.filter_by_status(TaskStatus.DONE)
+        in_progress_tasks = manager.filter_by_status(TaskStatus.IN_PROGRESS)
+        todo_tasks = manager.filter_by_status(TaskStatus.TODO)
 
         assert {t.task_id for t in done_tasks} == {2}
         assert {t.task_id for t in in_progress_tasks} == {1}
@@ -128,7 +128,7 @@ class TestTaskManager:
 
         dto = manager.add("task")
 
-        manager.mark("done", dto.task_id)
+        manager.mark(TaskStatus.DONE, dto.task_id)
 
         manager.update(dto.task_id, "new description")
 
@@ -159,15 +159,15 @@ class TestTaskManager:
     def test_mark_not_found(self, manager: TaskManager):
 
         with pytest.raises(TaskNotFoundError):
-            manager.mark("done", 999)
+            manager.mark(TaskStatus.DONE, 999)
 
 
     def test_mark_invalid_status(self, manager: TaskManager):
 
         dto = manager.add("task")
 
-        with pytest.raises(ValueError):
-            manager.mark("INVALID_STATUS", dto.task_id)
+        with pytest.raises(AttributeError):
+            manager.mark(TaskStatus.invalid_status, dto.task_id)
 
     def test_filter_by_status_none_returns_all(self, manager: TaskManager):
         # Agregamos varias tareas

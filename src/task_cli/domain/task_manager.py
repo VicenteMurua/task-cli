@@ -113,7 +113,7 @@ class TaskManager:
         with self._repository as repo:
             return repo.read(task_id)
 
-    def mark(self, status: str, task_id: int) -> TaskDTO:
+    def mark(self, status: TaskStatus, task_id: int) -> TaskDTO:
         """
         Change the status of a task.
 
@@ -132,12 +132,12 @@ class TaskManager:
         with self._repository as repo:
             target_dto: TaskDTO = repo.read(task_id)
             target_task: Task = TaskMapper.from_dto(target_dto)
-            target_task.update_status(TaskStatus(status))
+            target_task.update_status(status)
             updated_target_dto: TaskDTO = TaskMapper.to_dto(target_task)
             repo.update(updated_target_dto)
             return updated_target_dto
 
-    def filter_by_status(self, status_filter: str | None) -> list[TaskDTO]:
+    def filter_by_status(self, status_filter: TaskStatus | None) -> list[TaskDTO]:
         """
         Retrieve tasks filtered by status.
 
@@ -154,4 +154,4 @@ class TaskManager:
         with self._repository as repo:
             if status_filter is None:
                 return repo.filter_by_status(None)
-            return repo.filter_by_status(TaskStatus(status_filter))
+            return repo.filter_by_status(status_filter)
