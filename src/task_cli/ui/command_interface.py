@@ -6,7 +6,6 @@ from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
 from task_cli.ui.messages.commands import Msgs, action_msgs, Action, feedback_msgs, commands_data
-import sys
 import argparse
 
 
