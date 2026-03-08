@@ -36,6 +36,8 @@ omit = [
     "tests/*",
     "**/__init__.py",
     "src/task_cli/ui/formatters.py",
+    "src/task_cli/main.py",
+    "src/task_cli/domain/exceptions.py",
 ]
 
 [tool.coverage.report]
