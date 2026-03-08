@@ -199,7 +199,7 @@ class FileRepository(IBulkRepository):
             ]
 
         if not isinstance(status_filter, TaskStatus):
-            raise ValueError(f"Invalid status filter: {status_filter}")
+            raise TypeError(f"Invalid status filter: {status_filter}")
 
         return [
             TaskMapper.from_dict(task)
