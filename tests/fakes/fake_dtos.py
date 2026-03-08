@@ -1,58 +1,65 @@
+from datetime import datetime
 from task_cli.domain.dtos import TaskDTO
 from task_cli.domain.task import TaskStatus
-from datetime import datetime, timedelta
 
-now = datetime.now()
-tomorrow = now + timedelta(days=1)
 
-fake_todo_1_dict = {
-    "task_id": 1,
-    "description": "Tarea Falsa 1",
-    "status": TaskStatus.TODO.value,
-    "created_at": now.isoformat(),
-    "updated_at": now.isoformat(),
-}
-fake_todo_1_dto = TaskDTO(**fake_todo_1_dict)
+class TaskDataset:
 
-modified_todo_1_dict = {
-    "task_id": 1,
-    "description": "Tarea Falsa 1 modificada",
-    "status": TaskStatus.IN_PROGRESS.value,
-    "created_at": fake_todo_1_dict["created_at"],
-    "updated_at": fake_todo_1_dict["updated_at"],
-}
-modified_dto_1_dto = TaskDTO(**modified_todo_1_dict)
+    def __init__(self):
+        self._tasks: list[TaskDTO] = []
 
-fake_todo_2_dict = {
-    "task_id": 2,
-    "description": "Tarea Falsa 2",
-    "status": TaskStatus.TODO.value,
-    "created_at": tomorrow.isoformat(),
-    "updated_at": tomorrow.isoformat(),
-}
-fake_todo_2_dto = TaskDTO(**fake_todo_2_dict)
+    def add(
+        self,
+        description: str,
+        status: TaskStatus,
+        task_id: int | None = None,
+        created_at: datetime | None = None,
+        updated_at: datetime | None = None,
+    ) -> "TaskDataset":
 
-fake_done_1_dict = {
-    "task_id": 3,
-    "description": "Tarea Falsa 3",
-    "status": TaskStatus.DONE.value,
-    "created_at": tomorrow.isoformat(),
-    "updated_at": tomorrow.isoformat(),
-}
-fake_done_1_dto = TaskDTO(**fake_done_1_dict)
+        now = datetime.now()
 
-fake_in_progress_1_dict = {
-    "task_id": 4,
-    "description": "Tarea Falsa 4",
-    "status": TaskStatus.IN_PROGRESS.value,
-    "created_at": tomorrow.isoformat(),
-    "updated_at": tomorrow.isoformat(),
-}
-fake_in_progress_1_dto = TaskDTO(**fake_in_progress_1_dict)
+        task_id = task_id or (len(self._tasks) + 1)
+        created_at = created_at or now
+        updated_at = updated_at or created_at
 
-fake_dto_list_no_duplicates: list[TaskDTO] = [
-    fake_todo_1_dto,
-    fake_todo_2_dto,
-    fake_done_1_dto,
-    fake_in_progress_1_dto,
-]
+        dto = TaskDTO(
+            task_id=task_id,
+            description=description,
+            status=status.value,
+            created_at=created_at.isoformat(),
+            updated_at=updated_at.isoformat(),
+        )
+
+        self._tasks.append(dto)
+        return self
+
+    def all(self) -> list[TaskDTO]:
+        return list(self._tasks)
+
+    def by_status(self, status: TaskStatus) -> list[TaskDTO]:
+        return [t for t in self._tasks if t.status == status.value]
+
+    def todo(self) -> list[TaskDTO]:
+        return self.by_status(TaskStatus.TODO)
+
+    def in_progress(self) -> list[TaskDTO]:
+        return self.by_status(TaskStatus.IN_PROGRESS)
+
+    def done(self) -> list[TaskDTO]:
+        return self.by_status(TaskStatus.DONE)
+
+    def count(self, status: TaskStatus | None = None) -> int:
+        if status is None:
+            return len(self._tasks)
+        return len(self.by_status(status))
+
+    def add_many(self, descriptions: list[str], status: TaskStatus) -> "TaskDataset":
+        for desc in descriptions:
+            self.add(description=desc, status=status)
+        return self
+
+    def load_into(self, repo) -> None:
+        with repo as r:
+            for dto in self._tasks:
+                r.add(dto)
