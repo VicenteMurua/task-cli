@@ -93,7 +93,7 @@ class TestTaskTypeSafety:
     """Pruebas de contrato técnico (Programador)."""
     def test_id_must_be_integer(self, task_params):
         task_params["task_id"] = "zapallo"
-        with pytest.raises(TypeError, match="ID must be a integer"):
+        with pytest.raises(TypeError, match="ID must be an integer"):
             Task(**task_params)
 
     def test_description_must_be_string(self, task_params):

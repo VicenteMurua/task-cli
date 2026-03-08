@@ -8,16 +8,12 @@ time_zone = timezone.utc
 
 class TaskStatus(Enum):
     """
-    Enumeration representing the possible states of a task.
+    Enumeration of the possible lifecycle states of a task.
 
-    Attributes
-    ----------
-    TODO
-        The task has not been started yet.
-    IN_PROGRESS
-        The task is currently being worked on.
-    DONE
-        The task has been completed.
+    Members:
+        TODO: The task has not been started yet.
+        IN_PROGRESS: Work on the task is currently underway.
+        DONE: The task has been completed.
     """
     TODO = "todo"
     IN_PROGRESS = "in-progress"
@@ -26,22 +22,18 @@ class TaskStatus(Enum):
 
 def update_timestamp(func):
     """
-    Decorator that automatically updates the `updated_at` timestamp
-    after executing a method that mutates the task state.
+    Decorator that refreshes the `updated_at` timestamp after a state mutation.
 
-    This ensures that any state change within the entity correctly
-    reflects the last modification time.
+    This decorator should be applied to methods that modify the internal
+    state of a `Task` instance. After the wrapped method executes
+    successfully, the `updated_at` attribute is automatically updated
+    to the current time.
 
-    Parameters
-    ----------
-    func : callable
-        Method that modifies the internal state of the task.
+    Args:
+        func: The method responsible for mutating the task state.
 
-    Returns
-    -------
-    callable
-        Wrapped function that executes the original method and then
-        refreshes the `updated_at` timestamp.
+    Returns:
+        The wrapped method with automatic timestamp refresh.
     """
 
     @wraps(func)
@@ -55,24 +47,21 @@ def update_timestamp(func):
 
 class Task:
     """
-    Domain entity representing a task.
+    Domain entity representing a task within the task tracking system.
 
-    This class encapsulates business rules related to a task,
-    including validation logic, state transitions, and timestamp
-    management for creation and updates.
+    The Task entity encapsulates domain invariants such as validation
+    of identifiers, description constraints, state transitions,
+    and timestamp management.
 
-    Attributes
-    ----------
-    description : str
-        Textual description of the task.
-    status : TaskStatus
-        Current state of the task.
-    task_id : int
-        Unique identifier of the task.
-    created_at : datetime
-        Timestamp indicating when the task was created.
-    updated_at : datetime
-        Timestamp indicating the last modification of the task.
+    Instances of this class are responsible for maintaining their
+    own internal consistency.
+
+    Attributes:
+        _description: Human-readable description of the task.
+        _status: Current lifecycle state of the task.
+        _task_id: Unique identifier of the task.
+        _created_at: Timestamp indicating when the task was created.
+        _updated_at: Timestamp of the last modification.
     """
 
     _description: str
@@ -92,25 +81,17 @@ class Task:
         """
         Initialize a new Task instance.
 
-        Parameters
-        ----------
-        description : str
-            Task description.
-        task_id : int
-            Unique identifier of the task.
-        status : TaskStatus
-            Initial status of the task.
-        created_at : datetime | None
-            Creation timestamp. If None, the current time is used.
-        updated_at : datetime | None
-            Last update timestamp. If None, it defaults to created_at.
+        Args:
+            description: Text describing the task.
+            task_id: Unique identifier of the task.
+            status: Initial task status.
+            created_at: Creation timestamp. If None, the current UTC time is used.
+            updated_at: Last modification timestamp. If None, it defaults to
+                the same value as `created_at`.
 
-        Raises
-        ------
-        TypeError
-            If an argument has an invalid type.
-        TaskValidationError
-            If any domain validation rule is violated.
+        Raises:
+            TypeError: If an argument has an invalid type.
+            TaskValidationError: If any domain validation rule is violated.
         """
         self._validate_description(description)
         self._validate_id(task_id)
@@ -127,7 +108,7 @@ class Task:
 
     @property
     def description(self) -> str:
-        """Return the current task description."""
+        """Return the task description."""
         return self._description
 
     def _set_description(self, description: str) -> None:
@@ -141,7 +122,7 @@ class Task:
 
     @property
     def status(self) -> TaskStatus:
-        """Return the current task status."""
+        """Return the current status of the task."""
         return self._status
 
     def _set_status(self, status: TaskStatus) -> None:
@@ -171,7 +152,14 @@ class Task:
     @staticmethod
     def _validate_description(new_description: str) -> None:
         """
-        Validate that the description is a non-empty string.
+        Validate a task description.
+
+        Ensures the description is a string containing at least one
+        non-whitespace character.
+
+        Raises:
+            TypeError: If the value is not a string.
+            IllegalTaskDescriptionError: If the description is empty or whitespace.
         """
         if not isinstance(new_description, str):
             raise TypeError("Description must be a string")
@@ -181,17 +169,28 @@ class Task:
     @staticmethod
     def _validate_id(new_id: int) -> None:
         """
-        Validate that the task ID is a positive integer.
+        Validate the task identifier.
+
+        The identifier must be a positive integer.
+
+        Raises:
+            TypeError: If the value is not an integer.
+            TaskValidationError: If the identifier is not greater than zero.
         """
         if type(new_id) is not int:
-            raise TypeError("ID must be a integer")
+            raise TypeError("ID must be an integer")
         if new_id <= 0:
             raise TaskValidationError("Task ID must be greater than 0")
 
     @staticmethod
     def _validate_status(new_status: TaskStatus) -> None:
         """
-        Validate that the status is a TaskStatus enum member.
+        Validate the task status.
+
+        Ensures that the provided value is a valid `TaskStatus` member.
+
+        Raises:
+            TypeError: If the value is not a `TaskStatus`.
         """
         if type(new_status) is not TaskStatus:
             raise TypeError("Status must be a TaskStatus")
@@ -216,6 +215,13 @@ class Task:
     def _validate_dates_relation(new_created_at: datetime | None, new_updated_at: datetime | None) -> None:
         """
         Validate the logical relationship between creation and update timestamps.
+
+        Rules:
+            - Both timestamps must either be provided together or both be None.
+            - If provided, `created_at` must not be later than `updated_at`.
+
+        Raises:
+            TaskValidationError: If the timestamps violate domain invariants.
         """
         if (new_created_at is None) ^ (new_updated_at is None):
             raise TaskValidationError(
@@ -230,14 +236,20 @@ class Task:
 
     def __repr__(self):
         """
-        Return a developer-friendly string representation of the task.
+        Return a developer-oriented representation of the task.
+
+        This representation includes the identifier, description,
+        status, and timestamps to facilitate debugging.
         """
         class_name = self.__class__.__name__
         return f"{class_name}({self._task_id=},{self.description=},{self.status=},{self.created_at=},{self.updated_at=})"
 
     def _refresh_updated_at(self):
         """
-        Update the `updated_at` timestamp to the current time.
+        Update the `updated_at` field to the current UTC time.
+
+        This method is typically invoked automatically by the
+        `update_timestamp` decorator after a state mutation.
         """
         self._updated_at = datetime.now(time_zone)
 
@@ -246,7 +258,14 @@ class Task:
         """
         Update the task description.
 
-        This operation automatically refreshes the `updated_at` timestamp.
+        The `updated_at` timestamp is automatically refreshed.
+
+        Args:
+            new_description: The new description for the task.
+
+        Raises:
+            TypeError: If the value is not a string.
+            IllegalTaskDescriptionError: If the description is invalid.
         """
         self._validate_description(new_description)
         self._set_description(new_description)
@@ -254,9 +273,15 @@ class Task:
     @update_timestamp
     def update_status(self, status: TaskStatus) -> None:
         """
-        Update the task status.
+        Change the task status.
 
-        This operation automatically refreshes the `updated_at` timestamp.
+        The `updated_at` timestamp is automatically refreshed.
+
+        Args:
+            status: The new status of the task.
+
+        Raises:
+            TypeError: If the value is not a valid `TaskStatus`.
         """
         self._validate_status(status)
         self._set_status(status)
