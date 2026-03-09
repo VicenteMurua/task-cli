@@ -1,4 +1,8 @@
 from enum import Enum
+
+from task_cli.domain.task import TaskStatus
+
+
 class Msgs(Enum):
     SHOW = "show"
     LIST = "list"
@@ -122,7 +126,6 @@ commands_data ={
             },
             "parser1": {
                 "name": "filter",
-                "choices": ["done", "in-progress", "todo"],
                 "help": "Filter by: todo, in-progress, or done (optional)",
             }
         }
@@ -204,8 +207,7 @@ commands_data ={
             },
             "parser1": {
                 "name": "filter",
-                "choices": ["hecha", "en-progreso", "pendiente"],
-                "help": "Filtrar por: pendiente, en-progreso o hecha (opcional)",
+                "help": f"Filtrar por: {TaskStatus.TODO.value}(a hacer), {TaskStatus.IN_PROGRESS.value}(en progreso) o {TaskStatus.DONE.value}(hecho) [opcional]",
             },
         },
     },
