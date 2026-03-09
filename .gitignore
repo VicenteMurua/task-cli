@@ -8,6 +8,7 @@
 0_Diagramas
 _Diagramas
 data
+dist/
 
 # Archivos de Python compilados
 __pycache__/
