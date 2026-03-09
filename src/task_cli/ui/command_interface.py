@@ -204,7 +204,7 @@ class CommandSetup:
             filter_tasks["name"],
             nargs="?",
             default=None,
-            choices=filter_tasks["choices"],
+            choices=[TaskStatus.TODO.value, TaskStatus.DONE.value, TaskStatus.IN_PROGRESS.value],
             help=filter_tasks["help"]
         )
         parser_list.set_defaults(func=command_function)
@@ -334,7 +334,11 @@ class CommandInterface:
         print(action_msgs[self.lang][Action.MARK])
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
-        task_list: list[TaskDTO] = self._manager.filter_by_status(args.filter)
+        if args.filter is None:
+            status_filter = None
+        else:
+            status_filter = TaskStatus(args.filter)
+        task_list: list[TaskDTO] = self._manager.filter_by_status(status_filter)
         if not task_list:
             raise NoTaskOnFilter(args.filter)
         self.quick_show_list(task_list, self.style)
