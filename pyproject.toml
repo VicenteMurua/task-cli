@@ -7,7 +7,7 @@ name = "task-cli"
 version = "0.1.0"
 description = "Una app de comandos para manejar tareas"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 license = "MIT"
 authors = [
     {name = "Vicente", email = "muruamedina@gmail.com"}
