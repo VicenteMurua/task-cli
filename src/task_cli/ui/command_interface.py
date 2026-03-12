@@ -2,6 +2,7 @@ from typing import Callable
 from colorama import Fore, Style
 from task_cli.domain.exceptions import TaskException, TaskValidationError, TaskNotFoundError, NoTaskOnFilter
 from task_cli.domain.task import TaskStatus
+from task_cli.repository.task_repository import ConfigJson
 from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
@@ -209,6 +210,9 @@ class CommandSetup:
         )
         parser_list.set_defaults(func=command_function)
 
+    def _setup_language_command(self, command_registry: argparse._SubParsersAction):
+        pass
+
 
 class CommandInterface:
     """
@@ -221,7 +225,7 @@ class CommandInterface:
     """
     _manager: TaskManager
 
-    def __init__(self, manager: TaskManager, style: bool = False, lang: str = "en") -> None:
+    def __init__(self, manager: TaskManager,  config: ConfigJson, style: bool = False) -> None:
         """
         Initialize the CLI interface.
 
@@ -231,12 +235,11 @@ class CommandInterface:
             Domain service responsible for task operations.
         style : bool, optional
             Enable styled output in CLI tables.
-        lang : str, optional
-            Language used for command texts and messages.
         """
         self._manager = manager
+        self.config = config
         self.style = style
-        self.lang = lang
+        self.lang = self.config.get("lang")
         self.map_functions = {
             Action.ADD: self._cmd_add,
             Action.UPDATE: self._cmd_update,
