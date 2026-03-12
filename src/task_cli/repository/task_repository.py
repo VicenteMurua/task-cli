@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from task_cli.domain.dtos import TaskDTO
-from task_cli.domain.exceptions import TaskNotFoundError, TaskAlreadyExistsError
+from task_cli.domain.exceptions import TaskNotFoundError, TaskAlreadyExistsError, NoTaskToList
 from task_cli.domain.task import TaskStatus
 from task_cli.repository.mappers import TaskMapper
 from functools import wraps
@@ -351,20 +351,18 @@ class FileRepository(IBulkRepository):
     def filter_by_status(self, status_filter: TaskStatus|None = None) -> list[TaskDTO]:
         tasks_by_id = self.tasks_by_id
 
-        if status_filter is None:
-            return [
-                TaskMapper.from_dict(task)
-                for task in tasks_by_id.values()
-            ]
-
-        if not isinstance(status_filter, TaskStatus):
+        if not isinstance(status_filter, (TaskStatus, type(None))):
             raise TypeError(f"Invalid status filter: {status_filter}")
 
-        return [
+        task_list = [
             TaskMapper.from_dict(task)
             for task in tasks_by_id.values()
             if task["status"] == status_filter.value
         ]
+
+        if task_list:
+            return task_list
+        raise NoTaskToList(status_filter)
 
 
 class IDirectAccessRepository(IRepository, ABC):
@@ -526,4 +524,7 @@ class SQLiteRepository(IDirectAccessRepository):
         cursor = self.conn.execute(query, {"status": status_filter.value})
 
         rows = cursor.fetchall()
-        return [TaskMapper.from_dict(dict(row)) for row in rows]
+        task_list = [TaskMapper.from_dict(dict(row)) for row in rows]
+        if task_list is not None:
+            return task_list
+        raise NoTaskToList()

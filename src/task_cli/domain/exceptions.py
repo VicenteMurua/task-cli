@@ -106,3 +106,6 @@ class UnknownTaskError(TaskException, RuntimeError):
     or an unhandled domain condition.
     """
     pass
+
+class NoTaskToList(TaskException):
+    pass
