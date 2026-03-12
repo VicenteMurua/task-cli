@@ -10,9 +10,9 @@ by `platformdirs`.
 """
 from enum import Enum
 from pathlib import Path
-from platformdirs import user_data_dir
+from platformdirs import user_data_dir, user_config_dir
 from task_cli.repository.task_repository import (
-    FileRepository, JSONStorage, CSVStorage, SQLiteRepository, IRepository
+    FileRepository, JSONStorage, CSVStorage, SQLiteRepository, IRepository, ConfigJson
 )
 
 
@@ -68,3 +68,24 @@ def make_task_repository(repo_type: RepoType = RepoType.SQLite) -> IRepository:
     file_dir = path_dir / f"task.{repo_type.value}"
 
     return factory(file_dir)
+
+def make_config_manager() -> ConfigJson:
+    """
+    Factory to create a ConfigJson manager stored in the user's config directory.
+
+    Parameters
+    ----------
+    app_name : str
+        Name of the application, used to create a config folder.
+
+    Returns
+    -------
+    ConfigJson
+        Instance of ConfigJson ready to read/write configuration.
+    """
+    app_name = "task_cli"
+    config_dir = Path(user_data_dir(app_name))
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    config_file = config_dir / "config.json"
+    return ConfigJson(config_file)
