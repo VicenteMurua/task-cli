@@ -17,6 +17,7 @@ class Action(Enum):
     UPDATE = "update"
     LIST = "list"
     READ = "read"
+    LANG = "change-lang"
 
 feedback_msgs = {
     "en":{
@@ -47,6 +48,7 @@ action_msgs = {
         Action.LIST: "\nListaste las tareas.",
     },
 }
+implemented_langs = ["en","es"]
 
 commands_data ={
     "en":{
@@ -127,6 +129,16 @@ commands_data ={
             "parser1": {
                 "name": "filter",
                 "help": "Filter by: todo, in-progress, or done (optional)",
+            }
+        },
+        Action.LANG:{
+            "command": {
+                "name": "change-lang",
+                "help": "changes ui language",
+            },
+            "parser1":{
+                "name": "lang",
+                "help": f"Chose from: {", ".join(implemented_langs)}.",
             }
         }
     },
@@ -210,5 +222,16 @@ commands_data ={
                 "help": f"Filtrar por: {TaskStatus.TODO.value}(a hacer), {TaskStatus.IN_PROGRESS.value}(en progreso) o {TaskStatus.DONE.value}(hecho) [opcional]",
             },
         },
+        Action.LANG: {
+            "command": {
+                "name": "cambiar-lenguaje",
+                "help": "Cambia el idioma de la ui",
+            },
+            "parser1": {
+                "name": "lenguaje",
+                "help": f"Elija desde: {", ".join(implemented_langs)}.",
+            }
+        }
+
     },
 }
