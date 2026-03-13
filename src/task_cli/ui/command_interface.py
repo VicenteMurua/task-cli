@@ -6,7 +6,7 @@ from task_cli.repository.task_repository import ConfigJson
 from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
-from task_cli.ui.messages.commands import Msgs, action_msgs, Action, feedback_msgs, commands_data
+from task_cli.ui.messages.commands import Msgs, action_msgs, Action, feedback_msgs, commands_data, implemented_langs
 import argparse
 
 
@@ -40,7 +40,7 @@ class CommandSetup:
     It uses language-specific command metadata to configure
     argument names, help messages, and command descriptions.
     """
-    def __init__(self, registry: argparse._SubParsersAction, lang: str, func_dict: dict[Action,Callable]) -> None:
+    def __init__(self, registry: argparse._SubParsersAction, texts: dict, func_dict: dict[Action,Callable]) -> None:
         """
         Initialize command registration.
 
@@ -48,12 +48,12 @@ class CommandSetup:
         ----------
         registry : argparse._SubParsersAction
             Subparser registry where CLI commands will be added.
-        lang : str
+        texts : str
             Language used for command text and help messages.
         func_dict : dict[Action, Callable]
             Mapping between actions and command handler functions.
         """
-        self.texts = commands_data.get(lang, commands_data["en"])
+        self.texts = texts
         self.functions = func_dict
         self._setup_all_commands(registry)
 
@@ -71,6 +71,7 @@ class CommandSetup:
         self._setup_mark_in_progress_command(command_registry)
         self._setup_list_command(command_registry)
         self._setup_read_command(command_registry)
+        self._setup_change_lang_command(command_registry)
 
     def _setup_add_command(self, command_registry: argparse._SubParsersAction):
         action = Action.ADD
@@ -210,8 +211,26 @@ class CommandSetup:
         )
         parser_list.set_defaults(func=command_function)
 
-    def _setup_language_command(self, command_registry: argparse._SubParsersAction):
-        pass
+    def _setup_change_lang_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.LANG
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        lang = data["parser1"]
+        parser_change_lang = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_change_lang.add_argument(
+            lang["name"],
+            nargs="?",
+            default=None,
+            choices=implemented_langs,
+            help=lang["help"]
+        )
+        parser_change_lang.set_defaults(
+            func=command_function,
+        )
 
 
 class CommandInterface:
@@ -240,6 +259,7 @@ class CommandInterface:
         self.config = config
         self.style = style
         self.lang = self.config.get("lang")
+        self.texts = commands_data.get(self.lang, commands_data["en"])
         self.map_functions = {
             Action.ADD: self._cmd_add,
             Action.UPDATE: self._cmd_update,
@@ -248,8 +268,8 @@ class CommandInterface:
             Action.MARK_DONE: self._cmd_mark,
             Action.MARK_IN_PROGRESS: self._cmd_mark,
             Action.LIST: self._cmd_list,
+            Action.LANG: self._cmd_change_lang,
         }
-        self.texts = commands_data.get(self.lang, commands_data["en"])
 
         self._parser = argparse.ArgumentParser(prog="task-cli")
         self._setup_all_commands()
@@ -257,7 +277,7 @@ class CommandInterface:
     def _setup_all_commands(self):
         command_registry: argparse._SubParsersAction = self._parser.add_subparsers(dest="command", required=True)
 
-        CommandSetup(command_registry, self.lang, self.map_functions)
+        CommandSetup(command_registry, self.texts, self.map_functions)
 
     def run(self) -> None:
         """
@@ -309,22 +329,36 @@ class CommandInterface:
         print(TaskCliFormatter.format_tasks_table(tasks, TableStyle(style)))
 
     def _cmd_add(self, args: argparse.Namespace) -> None:
-        task:TaskDTO = self._manager.add(args.description)
+        action = self.texts[Action.ADD]
+        description = action["parser1"]["name"]
+        arg_description = getattr(args, description)
+        task:TaskDTO = self._manager.add(arg_description)
         self.show_feedback(task, self.style)
         print(action_msgs[self.lang][Action.ADD])
 
     def _cmd_update(self, args: argparse.Namespace) -> None:
-        task: TaskDTO = self._manager.update(args.task_id, args.description)
+        action = self.texts[Action.UPDATE]
+        task_id = action["parser1"]["name"]
+        description = action["parser2"]["name"]
+        arg_task_id = getattr(args, task_id)
+        arg_description = getattr(args, description)
+        task: TaskDTO = self._manager.update(arg_task_id, arg_description)
         self.show_feedback(task, self.style)
         print(action_msgs[self.lang][Action.UPDATE])
 
     def _cmd_delete(self, args: argparse.Namespace) -> None:
-        task: TaskDTO = self._manager.delete(args.task_id)
+        action = self.texts[Action.DELETE]
+        task_id = action["parser1"]["name"]
+        arg_task_id = getattr(args, task_id)
+        task: TaskDTO = self._manager.delete(arg_task_id)
         self.show_feedback(task, self.style)
         print(action_msgs[self.lang][Action.DELETE])
 
     def _cmd_read(self, args: argparse.Namespace) -> None:
-        task: TaskDTO = self._manager.read(args.task_id)
+        action = self.texts[Action.READ]
+        task_id = action["parser1"]["name"]
+        arg_task_id = getattr(args, task_id)
+        task: TaskDTO = self._manager.read(arg_task_id)
         if args.detail:
             self.show_feedback(task, self.style)
         else:
@@ -332,16 +366,28 @@ class CommandInterface:
         print(action_msgs[self.lang][Action.READ])
 
     def _cmd_mark(self, args: argparse.Namespace) -> None:
-        task: TaskDTO = self._manager.mark(args.status, args.task_id)
+        action = self.texts[Action.MARK_DONE]
+        task_id = action["parser1"]["name"]
+        arg_task_id = getattr(args, task_id)
+        task: TaskDTO = self._manager.mark(args.status, arg_task_id)
         self.show_feedback(task, self.style)
         print(action_msgs[self.lang][Action.MARK])
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
+        action = self.texts[Action.LIST]
+        status_filter = self.texts[Action.LIST]["parser1"]["name"]
+        arg_filter = getattr(args, status_filter)
         if args.filter is None:
             status_filter = None
         else:
-            status_filter = TaskStatus(args.filter)
+            status_filter = TaskStatus(arg_filter)
         task_list: list[TaskDTO] = self._manager.filter_by_status(status_filter)
         if not task_list:
-            raise NoTaskOnFilter(args.filter)
+            raise NoTaskOnFilter(arg_filter)
         self.quick_show_list(task_list, self.style)
+
+    def _cmd_change_lang(self, args: argparse.Namespace) -> None:
+        action = self.texts[Action.LANG]
+        lang = action["parser1"]["name"]
+        arg_lang = getattr(args, lang)
+        self.config.change_config("lang", arg_lang)
