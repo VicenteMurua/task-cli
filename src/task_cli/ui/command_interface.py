@@ -377,7 +377,7 @@ class CommandInterface:
         action = self.texts[Action.LIST]
         status_filter = self.texts[Action.LIST]["parser1"]["name"]
         arg_filter = getattr(args, status_filter)
-        if args.filter is None:
+        if arg_filter is None:
             status_filter = None
         else:
             status_filter = TaskStatus(arg_filter)
