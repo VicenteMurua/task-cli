@@ -4,9 +4,6 @@ from task_cli.repository.task_repository import IRepository
 from task_cli.ui.command_interface import CommandInterface
 
 
-
-
-
 def main():
     repo: IRepository = make_task_repository(RepoType.SQLite)
     task_manager = TaskManager(repo)

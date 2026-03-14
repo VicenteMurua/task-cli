@@ -12,9 +12,9 @@ from enum import Enum
 from pathlib import Path
 from platformdirs import user_data_dir, user_config_dir
 from task_cli.repository.task_repository import (
-    FileRepository, JSONStorage, CSVStorage, SQLiteRepository, IRepository, ConfigJson
+    FileRepository, JSONStorage, CSVStorage, SQLiteRepository, IRepository
 )
-
+from task_cli.infrastructure.config import ConfigJson
 
 
 class RepoType(str, Enum):
