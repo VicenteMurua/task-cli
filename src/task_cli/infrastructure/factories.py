@@ -8,26 +8,14 @@ multiple persistence implementations such as JSON, CSV, and SQLite.
 The repository is stored in the user's data directory provided
 by `platformdirs`.
 """
-from enum import Enum
 from pathlib import Path
-from platformdirs import user_data_dir, user_config_dir
+from platformdirs import user_data_dir
+
+from task_cli.infrastructure.enums import RepoType
 from task_cli.repository.task_repository import (
     FileRepository, JSONStorage, CSVStorage, SQLiteRepository, IRepository
 )
 from task_cli.infrastructure.config import ConfigJson
-
-
-class RepoType(str, Enum):
-    """
-    Supported repository storage backends.
-
-    Each value represents a persistence strategy used to
-    create a concrete repository implementation.
-    """
-    JSON = "json"
-    CSV = "csv"
-    SQLITE = "sqlite"
-
 
 repo_factories = {
     RepoType.JSON: lambda path: FileRepository(JSONStorage(path)),
@@ -36,7 +24,7 @@ repo_factories = {
 }
 
 
-def make_task_repository(repo_type: RepoType = RepoType.SQLITE) -> IRepository:
+def make_task_repository(config: ConfigJson) -> IRepository:
     """
     Create a task repository using the specified storage backend.
 
@@ -58,7 +46,8 @@ def make_task_repository(repo_type: RepoType = RepoType.SQLITE) -> IRepository:
     ValueError
         If an unsupported repository type is provided.
     """
-
+    repo_name = config.get("repo_type")
+    repo_type = RepoType(repo_name)
     factory = repo_factories.get(repo_type)
     if factory is None:
         raise ValueError(f"Unknown repository type: {repo_type}")

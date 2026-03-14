@@ -1,8 +1,15 @@
 import json
 from pathlib import Path
 
+from task_cli.infrastructure.enums import RepoType
+
 
 class ConfigJson:
+    default_values: dict = {
+        "lang": "en",
+        "style": "utf-8",
+        "repo_type": RepoType.SQLITE.value,
+    }
     def __init__(self, path: Path) -> None:
         self.path = path
         self.configs = {}
@@ -10,7 +17,7 @@ class ConfigJson:
 
     def _ensure_file(self) -> None:
         if not self.path.exists():
-            self.path.write_text(json.dumps({"lang": "en"}), encoding="utf-8")
+            self.path.write_text(json.dumps(self.default_values), encoding="utf-8")
 
     def _load(self):
         self._ensure_file()
