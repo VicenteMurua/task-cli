@@ -5,9 +5,9 @@ from task_cli.ui.command_interface import CommandInterface
 
 
 def main():
-    repo: IRepository = make_task_repository(RepoType.SQLite)
-    task_manager = TaskManager(repo)
     config_manager = make_config_manager()
+    repo: IRepository = make_task_repository(RepoType.SQLITE)
+    task_manager = TaskManager(repo)
     cli_handler = CommandInterface(task_manager, config_manager)
     cli_handler.run()
 

@@ -26,17 +26,17 @@ class RepoType(str, Enum):
     """
     JSON = "json"
     CSV = "csv"
-    SQLite = "sqlite"
+    SQLITE = "sqlite"
 
 
 repo_factories = {
     RepoType.JSON: lambda path: FileRepository(JSONStorage(path)),
     RepoType.CSV: lambda path: FileRepository(CSVStorage(path)),
-    RepoType.SQLite: lambda path: SQLiteRepository(path),
+    RepoType.SQLITE: lambda path: SQLiteRepository(path),
 }
 
 
-def make_task_repository(repo_type: RepoType = RepoType.SQLite) -> IRepository:
+def make_task_repository(repo_type: RepoType = RepoType.SQLITE) -> IRepository:
     """
     Create a task repository using the specified storage backend.
 
@@ -58,6 +58,7 @@ def make_task_repository(repo_type: RepoType = RepoType.SQLite) -> IRepository:
     ValueError
         If an unsupported repository type is provided.
     """
+
     factory = repo_factories.get(repo_type)
     if factory is None:
         raise ValueError(f"Unknown repository type: {repo_type}")
