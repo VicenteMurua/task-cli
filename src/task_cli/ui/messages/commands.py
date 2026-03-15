@@ -18,6 +18,7 @@ class Action(Enum):
     LIST = "list"
     READ = "read"
     LANG = "change-lang"
+    USER = "change-user"
 
 feedback_msgs = {
     "en":{
@@ -139,6 +140,16 @@ commands_data ={
             "parser1":{
                 "name": "lang",
                 "help": f"Chose from: {", ".join(implemented_langs)}.",
+            },
+        },
+        Action.USER:{
+            "command": {
+                "name": "change-user",
+                "help": "change task profile"
+            },
+            "parser1": {
+                "name": "user",
+                "help": "The profile you want to use"
             }
         }
     },
@@ -230,8 +241,17 @@ commands_data ={
             "parser1": {
                 "name": "lenguaje",
                 "help": f"Elija desde: {", ".join(implemented_langs)}.",
+            },
+        },
+        Action.USER: {
+            "command": {
+                "name": "cambiar-usuario",
+                "help": "Cambia el perfil de tareas"
+            },
+            "parser1": {
+                "name": "usuario",
+                "help": "El perfil que quieres usar"
             }
         }
-
     },
 }
