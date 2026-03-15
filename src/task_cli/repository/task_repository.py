@@ -316,17 +316,20 @@ class FileRepository(IBulkRepository):
         return TaskMapper.from_dict(tasks_by_id[id_to_read])
 
     @ensure_active
-    def filter_by_status(self, status_filter: TaskStatus|None = None) -> list[TaskDTO]:
+    def filter_by_status(self, status_filter: TaskStatus | None = None) -> list[TaskDTO]:
         tasks_by_id = self.tasks_by_id
 
         if not isinstance(status_filter, (TaskStatus, type(None))):
             raise TypeError(f"Invalid status filter: {status_filter}")
 
-        task_list = [
-            TaskMapper.from_dict(task)
-            for task in tasks_by_id.values()
-            if task["status"] == status_filter.value
-        ]
+        if status_filter is None:
+            task_list = [TaskMapper.from_dict(task) for task in tasks_by_id.values()]
+        else:
+            task_list = [
+                TaskMapper.from_dict(task)
+                for task in tasks_by_id.values()
+                if task["status"] == status_filter.value
+            ]
 
         if task_list:
             return task_list
@@ -476,23 +479,25 @@ class SQLiteRepository(IDirectAccessRepository):
         list[TaskDTO]
             List of tasks matching the filter.
         """
+
+
+        if not isinstance(status_filter, (TaskStatus, type(None))):
+            raise TypeError(f"Invalid status filter: {status_filter}")
+
         if status_filter is None:
             query = "SELECT * FROM tasks"
             cursor = self.conn.execute(query)
-            rows = cursor.fetchall()
-            return [TaskMapper.from_dict(dict(row)) for row in rows]
-
-        if not isinstance(status_filter, TaskStatus):
-            raise TypeError(f"Invalid status filter: {status_filter}")
-        query = """
-        SELECT *
-        FROM tasks
-        WHERE status = :status
-        """
-        cursor = self.conn.execute(query, {"status": status_filter.value})
+        else:
+            query = """
+            SELECT *
+            FROM tasks
+            WHERE status = :status
+            """
+            cursor = self.conn.execute(query, {"status": status_filter.value})
 
         rows = cursor.fetchall()
         task_list = [TaskMapper.from_dict(dict(row)) for row in rows]
-        if task_list is not None:
+
+        if task_list:
             return task_list
-        raise NoTaskToList()
+        raise NoTaskToList(status_filter)
