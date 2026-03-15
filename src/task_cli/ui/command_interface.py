@@ -72,6 +72,7 @@ class CommandSetup:
         self._setup_list_command(command_registry)
         self._setup_read_command(command_registry)
         self._setup_change_lang_command(command_registry)
+        self._setup_change_user_command(command_registry)
 
     def _setup_add_command(self, command_registry: argparse._SubParsersAction):
         action = Action.ADD
@@ -232,6 +233,25 @@ class CommandSetup:
             func=command_function,
         )
 
+    def _setup_change_user_command(self, command_registry: argparse._SubParsersAction):
+        action = Action.USER
+        data = self.texts[action]
+        command_function = self.functions[action]
+        command = data["command"]
+        user = data["parser1"]
+        parser_change_user = command_registry.add_parser(
+            name=command["name"],
+            help=command["help"]
+        )
+        parser_change_user.add_argument(
+            user["name"],
+            default="guest",
+            help=user["help"]
+        )
+        parser_change_user.set_defaults(
+            func=command_function,
+        )
+
 
 class CommandInterface:
     """
@@ -269,6 +289,7 @@ class CommandInterface:
             Action.MARK_IN_PROGRESS: self._cmd_mark,
             Action.LIST: self._cmd_list,
             Action.LANG: self._cmd_change_lang,
+            Action.USER: self._cmd_change_user
         }
 
         self._parser = argparse.ArgumentParser(prog="task-cli")
@@ -391,3 +412,9 @@ class CommandInterface:
         lang = action["parser1"]["name"]
         arg_lang = getattr(args, lang)
         self.config.change_config("lang", arg_lang)
+
+    def _cmd_change_user(self, args: argparse.Namespace) -> None:
+        action = self.texts[Action.USER]
+        current_user = action["parser1"]["name"]
+        arg_user = getattr(args, current_user)
+        self.config.change_config("current_user", arg_user)
