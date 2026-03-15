@@ -1,10 +1,16 @@
 import json
+from abc import ABC
 from pathlib import Path
 
 from task_cli.infrastructure.enums import RepoType
 
+class Config(ABC):
+    def get(self, key: str, default=None):
+        pass
+    def change_config(self, key: str, value: str) -> None:
+        pass
 
-class ConfigJson:
+class ConfigJson(Config):
     default_values: dict = {
         "lang": "en",
         "style": "utf-8",
