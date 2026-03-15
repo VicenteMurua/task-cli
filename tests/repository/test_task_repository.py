@@ -259,9 +259,9 @@ class TestTaskRepository:
             updated_at="2023-01-01"
         )
 
-        # 2. Abrimos el repo y PROVOCAMOS un error manual (ZeroDivisionError)
+        # 2. Abrimos el repo y PROVOCAMOS un error manual (RuntimeError)
         # Esto hará que entre al 'if exc_type:' de los métodos __exit__
-        with pytest.raises(ZeroDivisionError):
+        with pytest.raises(RuntimeError):
             with repo as r:
                 r.add(dto)
                 # Justo después de añadirlo, rompemos la ejecución
