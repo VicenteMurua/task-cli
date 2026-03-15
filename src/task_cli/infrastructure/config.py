@@ -15,6 +15,7 @@ class ConfigJson(Config):
         "lang": "en",
         "style": "utf-8",
         "repo_type": RepoType.SQLITE.value,
+        "current_user": "guest",
     }
     def __init__(self, path: Path) -> None:
         self.path = path
