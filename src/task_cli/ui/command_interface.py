@@ -2,7 +2,7 @@ from typing import Callable
 from colorama import Fore, Style
 from task_cli.domain.exceptions import TaskException, TaskValidationError, TaskNotFoundError, NoTaskOnFilter
 from task_cli.domain.task import TaskStatus
-from task_cli.infrastructure.config import ConfigJson
+from task_cli.infrastructure.config import Config
 from task_cli.ui.formatters import TaskCliFormatter, TableStyle
 from task_cli.domain.task_manager import TaskManager
 from task_cli.domain.dtos import TaskDTO
@@ -244,7 +244,7 @@ class CommandInterface:
     """
     _manager: TaskManager
 
-    def __init__(self, manager: TaskManager,  config: ConfigJson, style: bool = False) -> None:
+    def __init__(self, manager: TaskManager,  config: Config, style: bool = False) -> None:
         """
         Initialize the CLI interface.
 
@@ -375,7 +375,7 @@ class CommandInterface:
 
     def _cmd_list(self, args: argparse.Namespace) -> None:
         action = self.texts[Action.LIST]
-        status_filter = self.texts[Action.LIST]["parser1"]["name"]
+        status_filter = action["parser1"]["name"]
         arg_filter = getattr(args, status_filter)
         if arg_filter is None:
             status_filter = None
