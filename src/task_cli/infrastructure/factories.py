@@ -33,8 +33,8 @@ def make_task_repository(config: ConfigJson) -> IRepository:
 
     Parameters
     ----------
-    repo_type : RepoType, optional
-        Storage backend to use. Defaults to SQLite.
+    config :
+        toda la data importante
 
     Returns
     -------
@@ -49,24 +49,21 @@ def make_task_repository(config: ConfigJson) -> IRepository:
     repo_name = config.get("repo_type")
     repo_type = RepoType(repo_name)
     factory = repo_factories.get(repo_type)
+    current_user = config.get("current_user")
     if factory is None:
         raise ValueError(f"Unknown repository type: {repo_type}")
 
-    path_dir = Path(user_data_dir("task_cli"))
-    path_dir.mkdir(parents=True, exist_ok=True)
+    path_dir = Path(user_data_dir(appname="task_cli", appauthor=False))
+    user_path = path_dir / current_user
+    user_path.mkdir(parents=True, exist_ok=True)
 
-    file_dir = path_dir / f"task.{repo_type.value}"
+    file_dir = user_path / f"task.{repo_type.value}"
 
     return factory(file_dir)
 
 def make_config_manager() -> ConfigJson:
     """
     Factory to create a ConfigJson manager stored in the user's config directory.
-
-    Parameters
-    ----------
-    app_name : str
-        Name of the application, used to create a config folder.
 
     Returns
     -------
