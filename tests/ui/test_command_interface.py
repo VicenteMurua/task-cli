@@ -2,23 +2,23 @@
 import pytest
 from unittest.mock import patch
 
+from tests.fakes.fake_config import FakeConfig
 from task_cli.domain.task import TaskStatus
 from task_cli.ui.command_interface import CommandInterface
 from task_cli.domain.task_manager import TaskManager
 from tests.fakes.fake_repository import FakeRepo
 from tests.fakes.fake_dtos import TaskDataset
 
-
 @pytest.fixture
 def cli_es():
     """Instancia la CLI en español con un repo en memoria."""
-    return CommandInterface(TaskManager(FakeRepo()), lang="es")
+    return CommandInterface(TaskManager(FakeRepo()), FakeConfig("es"))
 
 
 @pytest.fixture
 def cli_en():
     """Instancia la CLI en inglés para probar localización."""
-    return CommandInterface(TaskManager(FakeRepo()), lang="en")
+    return CommandInterface(TaskManager(FakeRepo()), FakeConfig("en"))
 
 
 class TestCLIIntegration:
