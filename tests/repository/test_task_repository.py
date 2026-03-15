@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 
 from task_cli.domain.dtos import TaskDTO
-from task_cli.domain.exceptions import TaskAlreadyExistsError, TaskNotFoundError
+from task_cli.domain.exceptions import TaskAlreadyExistsError, TaskNotFoundError, NoTaskToList
 from task_cli.domain.task import TaskStatus
 
 
@@ -90,8 +90,8 @@ class TestTaskRepository:
             r.add(dto)
             r.delete(dto.task_id)
         with repo as r:
-            result = r.filter_by_status(None)
-        assert result == []
+            with pytest.raises(NoTaskToList):
+                r.filter_by_status(None)
 
     def test_delete_bad_index(self, repo):
         with repo as r:
@@ -147,7 +147,7 @@ class TestTaskRepository:
     def test_filter_by_wrong_status(self, repo):
         with repo as r:
             with pytest.raises(TypeError):
-                r.filter_by_status("zapallo")
+                r.filter_by_status("zapallo") # type: ignore
 
     def test_persistence_between_sessions(self, repo):
         dto = TaskDataset().add("persistent", TaskStatus.TODO).all()[0]
@@ -205,8 +205,8 @@ class TestTaskRepository:
 
     def test_empty_repository(self, repo):
         with repo as r:
-            result = r.filter_by_status(None)
-        assert result == []
+            with pytest.raises(NoTaskToList):
+                r.filter_by_status(None)
 
     def test_filter_returns_correct_objects(self, repo, dataset):
         dataset.load_into(repo)
@@ -216,8 +216,8 @@ class TestTaskRepository:
 
     def test_filter_empty_repo(self, repo):
         with repo as r:
-            result = r.filter_by_status(TaskStatus.TODO)
-        assert result == []
+            with pytest.raises(NoTaskToList):
+                r.filter_by_status(TaskStatus.TODO)
 
     def test_add_after_delete_reuses_correct_state(self, repo):
         dataset = TaskDataset().add("task", TaskStatus.TODO)
@@ -267,8 +267,7 @@ class TestTaskRepository:
                 # Justo después de añadirlo, rompemos la ejecución
                 # En SQLite esto debería disparar el rollback()
                 # En FileRepository esto debería hacer que NO se llame a save()
-                invalid_operation = 1 / 0
-                return invalid_operation
+                raise RuntimeError("Error forzado para ver rollback")
 
                 # 3. Verificamos que los cambios NO se aplicaron
         # Si el rollback/no-save funcionó, el ID 999 no debe existir
